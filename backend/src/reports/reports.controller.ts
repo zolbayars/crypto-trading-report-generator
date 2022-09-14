@@ -6,7 +6,7 @@ export class ReportsController {
   constructor(private readonly reportService: ReportsService) {}
 
   @Get()
-  getReport(): string {
+  getReport(): Promise<string> {
     return this.reportService.getReport();
   }
 }

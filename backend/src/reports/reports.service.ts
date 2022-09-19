@@ -17,12 +17,10 @@ export class ReportsService {
     });
 
     const paramsObj: BinanceReq = {
-      symbol: 'REEFUSDT',
       timestamp: DateTime.now().toMillis().toString(),
     };
 
     const queryString = new URLSearchParams(paramsObj).toString();
-    console.log('queryString', queryString);
 
     paramsObj.signature = signWithSha256(
       queryString,

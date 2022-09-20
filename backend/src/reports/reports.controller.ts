@@ -6,7 +6,20 @@ export class ReportsController {
   constructor(private readonly reportService: ReportsService) {}
 
   @Get()
-  getReport(): Promise<string> {
-    return this.reportService.getReport();
+  async getReport(): Promise<object> {
+    let trades = [];
+    let errorMsg = null;
+
+    // @todo type
+    try {
+      trades = await this.reportService.getTrades();
+    } catch (error) {
+      errorMsg = error.message;
+    }
+
+    return {
+      trades,
+      errorMsg,
+    };
   }
 }

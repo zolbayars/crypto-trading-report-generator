@@ -9,7 +9,7 @@ interface BinanceReq {
 
 @Injectable()
 export class ReportsService {
-  async getReport(): Promise<string> {
+  async getTrades(): Promise<object[]> {
     const binanceClient = axios.create({
       baseURL: 'https://fapi.binance.com/',
       timeout: 3000,
@@ -33,10 +33,14 @@ export class ReportsService {
       });
 
       console.log('res', res.data);
+
+      return res.data;
     } catch (error) {
       console.error(error?.data);
-    }
 
-    return '';
+      throw new Error(
+        `Could not get the users's trades due to ${error.message}`,
+      );
+    }
   }
 }

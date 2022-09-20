@@ -32,9 +32,14 @@ export class ReportsService {
         params: paramsObj,
       });
 
-      console.log('res', res.data);
+      const trades = res.data;
 
-      return res.data;
+      // Sorting because Binance sends the oldest trades at the beginning of the array
+      trades.sort((a, b) => b.time - a.time);
+
+      console.log('trades', trades.length);
+
+      return trades;
     } catch (error) {
       console.error(error?.data);
 

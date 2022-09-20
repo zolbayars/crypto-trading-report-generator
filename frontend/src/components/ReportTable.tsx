@@ -18,7 +18,11 @@ interface Trade {
   maker: boolean;
 }
 
-function ReportTable() {
+interface ReportTableProps {
+  fromId: number | null
+}
+
+function ReportTable(props: ReportTableProps) {
 
   const [trades, setTrades] = useState<Trade[]>([])
 
@@ -36,29 +40,31 @@ function ReportTable() {
 
     }
     fetchData();    
-  });
+  }, [props.fromId]);
 
   return (
     <table className="reports">
-      {
-          trades.map(trade => {
-            return (
-              <tr>
-                <td>{trade.time}</td>
-                <td>{trade.symbol}</td>
-                <td>{trade.side}</td>
-                <td>{trade.price}</td>
-                <td>{trade.qty}</td>
-                <td>{trade.realizedPnl}</td>
-                <td>{trade.quoteQty}</td>
-                <td>{trade.commission}</td>
-                <td>{trade.commissionAsset}</td>
-                <td>{trade.maker}</td>
-              </tr>
-            )
-          })
-      }
-      
+      <tbody>
+        {
+            trades.map(trade => {
+              const tradeDate = new Date(trade.time);
+              return (
+                <tr key={trade.id}>
+                  <td>{tradeDate.toLocaleString()}</td>
+                  <td>{trade.symbol}</td>
+                  <td>{trade.side}</td>
+                  <td>{trade.price}</td>
+                  <td>{trade.qty}</td>
+                  <td>{trade.realizedPnl}</td>
+                  <td>{trade.quoteQty}</td>
+                  <td>{trade.commission}</td>
+                  <td>{trade.commissionAsset}</td>
+                  <td>{trade.maker}</td>
+                </tr>
+              )
+            })
+        }
+      </tbody>
     </table>
   );
 }

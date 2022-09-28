@@ -83,7 +83,6 @@ const mergeRelatedTrades = (relatedTrades: BinanceTrade[]): Trade => {
 };
 
 export const mergeTrades = (trades: BinanceTrade[]): Trade[] => {
-  console.info('merged trades');
   const exitTrades = {};
   const relatedTrades: RelatedTrades = {};
   const mergedTrades: Trade[] = [];
@@ -118,7 +117,7 @@ export const mergeTrades = (trades: BinanceTrade[]): Trade[] => {
     }
   }
 
-  console.info('merged trades', mergedTrades);
+  console.info('merged trades', mergedTrades.length);
 
   return mergedTrades;
 };

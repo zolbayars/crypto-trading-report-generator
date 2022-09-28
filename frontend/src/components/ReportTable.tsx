@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BinanceTrade } from '@shared/types';
+import { Trade } from '@shared/types';
 
 interface ReportTableProps {
   fromId: number | null
@@ -7,7 +7,7 @@ interface ReportTableProps {
 
 function ReportTable(props: ReportTableProps) {
 
-  const [trades, setTrades] = useState<BinanceTrade[]>([])
+  const [trades, setTrades] = useState<Trade[]>([])
 
   useEffect(() => {
     const fetchData = async (): Promise<void> => {
@@ -30,19 +30,20 @@ function ReportTable(props: ReportTableProps) {
       <tbody>
         {
             trades.map(trade => {
-              const tradeDate = new Date(trade.time);
+              const entryDate = new Date(trade.entryDate);
+              const exitDate = new Date(trade.exitDate);
               return (
-                <tr key={trade.id}>
-                  <td>{tradeDate.toLocaleString()}</td>
+                <tr>
+                  <td>{entryDate.toLocaleString()}</td>
+                  <td>{exitDate.toLocaleString()}</td>
                   <td>{trade.symbol}</td>
-                  <td>{trade.side}</td>
-                  <td>{trade.price}</td>
-                  <td>{trade.qty}</td>
-                  <td>{trade.realizedPnl}</td>
-                  <td>{trade.quoteQty}</td>
-                  <td>{trade.commission}</td>
-                  <td>{trade.commissionAsset}</td>
-                  <td>{trade.maker}</td>
+                  <td>{trade.direction === 0 ? "Long" : "Short"}</td>
+                  <td>{trade.entryPrice}</td>
+                  <td>{trade.exitPrice}</td>
+                  <td>{trade.size}</td>
+                  <td>{trade.fee}</td>
+                  <td>{trade.feeAsset}</td>
+                  <td>{trade.pnl}</td>
                 </tr>
               )
             })

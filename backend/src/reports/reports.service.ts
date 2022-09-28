@@ -1,7 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { DateTime } from 'luxon';
 import axios from 'axios';
+import { BinanceTrade } from '@shared/types';
 import { signWithSha256 } from '../utils';
+import { mergeTrades } from '../helpers/exchanges/binance';
 
 interface BinanceReq {
   [key: string]: string;
@@ -32,16 +34,18 @@ export class ReportsService {
         params: paramsObj,
       });
 
-      const trades = res.data;
+      console.log('Result from exchange', res.status, res.statusText);
+
+      const trades = res.data as BinanceTrade[];
 
       // Sorting because Binance sends the oldest trades at the beginning of the array
       trades.sort((a, b) => b.time - a.time);
 
-      console.log('trades', trades.length);
+      console.log(`Fetched ${trades.length} trades`);
 
-      return trades;
+      return mergeTrades(trades);
     } catch (error) {
-      console.error(error?.data);
+      console.error('Error while fetching user trades from exchange', error);
 
       throw new Error(
         `Could not get the users's trades due to ${error.message}`,

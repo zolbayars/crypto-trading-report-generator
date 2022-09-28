@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trade } from '@shared/types';
+import { BinanceTrade } from '@shared/types';
 
 interface ReportTableProps {
   fromId: number | null
@@ -7,7 +7,7 @@ interface ReportTableProps {
 
 function ReportTable(props: ReportTableProps) {
 
-  const [trades, setTrades] = useState<Trade[]>([])
+  const [trades, setTrades] = useState<BinanceTrade[]>([])
 
   useEffect(() => {
     const fetchData = async (): Promise<void> => {

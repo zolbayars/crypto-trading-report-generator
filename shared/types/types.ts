@@ -1,4 +1,4 @@
-export interface Trade {
+export interface BinanceTrade {
   symbol: string;
   id: number;
   orderId: number;
@@ -14,4 +14,25 @@ export interface Trade {
   positionSide: string;
   buyer: boolean;
   maker: boolean;
+}
+
+export enum TradeDirection {
+  "LONG",
+  "SHORT",
+}
+
+export interface Trade {
+  entryDate: number;
+  exitDate: number;
+  symbol: string;
+  direction: TradeDirection;
+  entryPrice: number;
+  exitPrice: number;
+  size: number;
+  fee: number;
+  feeAsset: string;
+  pnl: number;
+  pnlPercentage: number;
+  exitTradeIds: number[];
+  entryTradeIds: number[];
 }

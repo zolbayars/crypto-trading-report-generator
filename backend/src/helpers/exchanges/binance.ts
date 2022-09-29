@@ -23,7 +23,10 @@ const getTradeDirection = (trade: BinanceTrade): TradeDirection => {
   }
 };
 
-const getTradeSize = (relatedTrades: BinanceTrade[]): number => {
+const getTradeSize = (
+  relatedTrades: BinanceTrade[],
+  isBreakeven: boolean,
+): number => {
   let sizeOfEntry = 0;
   let sizeOfExit = 0;
 
@@ -36,12 +39,17 @@ const getTradeSize = (relatedTrades: BinanceTrade[]): number => {
     }
   }
 
-  if (sizeOfEntry !== sizeOfExit) {
-    console.error('Discprenancy in exit and entry trade sizes:', relatedTrades);
+  if (sizeOfExit > 0 && sizeOfEntry !== sizeOfExit) {
+    console.error(
+      'aaa Discprenancy in exit and entry trade sizes:',
+      sizeOfEntry,
+      sizeOfExit,
+      relatedTrades,
+    );
     throw new Error('Discprenancy in exit and entry trade sizes!');
   }
 
-  return sizeOfEntry;
+  return !isBreakeven ? sizeOfEntry : sizeOfEntry / 2;
 };
 
 const mergeRelatedTrades = (relatedTrades: BinanceTrade[]): Trade => {
@@ -77,7 +85,15 @@ const mergeRelatedTrades = (relatedTrades: BinanceTrade[]): Trade => {
     }
   }
 
-  mergedTrade.size = getTradeSize(relatedTrades);
+  const isBreakeven =
+    !mergedTrade.exitTradeIds.length && !!mergedTrade.entryTradeIds.length;
+
+  if (isBreakeven) {
+    // The first trade pushed to the entryTradeIds should be the latest trade (the exit trade)
+    mergedTrade.exitTradeIds.push(mergedTrade.entryTradeIds[0]);
+  }
+
+  mergedTrade.size = getTradeSize(relatedTrades, isBreakeven);
 
   return mergedTrade;
 };
@@ -99,10 +115,13 @@ export const mergeTrades = (trades: BinanceTrade[]): Trade[] => {
       relatedTrades[symbol].push(trade);
     }
 
-    // realizedPnl equals 0 when the trade is entry
+    // realizedPnl equals 0 when the trade is entry or when the trade is exited with breakeven
     if (trade.realizedPnl !== '0') {
       // A structure like this: { 'XLMUSDT': 150 }
       exitTrades[symbol] = exitTrades[symbol] + qty || qty;
+      // breakeven trade
+    } else if (!exitTrades[trade.symbol]) {
+      exitTrades[symbol] = qty;
     } else if (exitTrades[trade.symbol] > 0) {
       exitTrades[symbol] -= qty;
 

@@ -41,7 +41,7 @@ function ReportTable(props: ReportTableProps) {
                   <td>{trade.entryPrice}</td>
                   <td>{trade.exitPrice}</td>
                   <td>{trade.size}</td>
-                  <td>{trade.fee}</td>
+                  <td>{trade.fee.toPrecision(5)}</td>
                   <td>{trade.feeAsset}</td>
                   <td>{trade.pnl}</td>
                 </tr>

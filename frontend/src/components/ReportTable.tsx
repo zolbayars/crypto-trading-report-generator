@@ -1,8 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Trade } from '@shared/types';
+import { DateTime } from 'luxon';
 
 interface ReportTableProps {
   fromId: number | null
+}
+
+const formatTimestamp = (timestamp: number) => {
+  const date = DateTime.fromMillis(timestamp);
+  return `${date.toFormat('yyyy-MM-dd hh:mm:ss')}`
 }
 
 function ReportTable(props: ReportTableProps) {
@@ -30,12 +36,10 @@ function ReportTable(props: ReportTableProps) {
       <tbody>
         {
             trades.map(trade => {
-              const entryDate = new Date(trade.entryDate);
-              const exitDate = new Date(trade.exitDate);
               return (
                 <tr>
-                  <td>{entryDate.toLocaleString()}</td>
-                  <td>{exitDate.toLocaleString()}</td>
+                  <td>{formatTimestamp(trade.entryDate)}</td>
+                  <td>{formatTimestamp(trade.exitDate)}</td>
                   <td>{trade.symbol}</td>
                   <td>{trade.direction === 0 ? "Long" : "Short"}</td>
                   <td>{trade.entryPrice}</td>

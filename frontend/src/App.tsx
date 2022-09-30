@@ -5,9 +5,9 @@ import ReportTable from './components/ReportTable'
 function App() {
   return (
     <div className="App">
-      <header className="App-header">
+      <div className="main-page">
         <ReportTable fromId = {null}/>
-      </header>
+      </div>
     </div>
   );
 }

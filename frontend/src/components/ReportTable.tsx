@@ -48,6 +48,7 @@ function ReportTable(props: ReportTableProps) {
                   <td>{trade.fee.toPrecision(5)}</td>
                   <td>{trade.feeAsset}</td>
                   <td>{trade.pnl}</td>
+                  <td>{trade.pnlPercentage.toPrecision(2)}%</td>
                 </tr>
               )
             })

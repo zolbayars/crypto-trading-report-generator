@@ -93,7 +93,11 @@ const mergeRelatedTrades = (relatedTrades: BinanceTrade[]): Trade => {
     mergedTrade.exitTradeIds.push(mergedTrade.entryTradeIds[0]);
   }
 
-  mergedTrade.size = getTradeSize(relatedTrades, isBreakeven);
+  const tradeSize = getTradeSize(relatedTrades, isBreakeven);
+  mergedTrade.size = tradeSize;
+  mergedTrade.pnlPercentage =
+    (mergedTrade.pnl - mergedTrade.fee * 100) /
+    (tradeSize * mergedTrade.entryPrice);
 
   return mergedTrade;
 };

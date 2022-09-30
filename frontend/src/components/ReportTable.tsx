@@ -8,7 +8,7 @@ interface ReportTableProps {
 
 const formatTimestamp = (timestamp: number) => {
   const date = DateTime.fromMillis(timestamp);
-  return `${date.toFormat('yyyy-MM-dd hh:mm:ss')}`
+  return `${date.toFormat('yyyy-MM-dd HH:mm:ss')}`
 }
 
 function ReportTable(props: ReportTableProps) {
@@ -47,7 +47,7 @@ function ReportTable(props: ReportTableProps) {
                   <td>{trade.size}</td>
                   <td>{trade.fee.toPrecision(5)}</td>
                   <td>{trade.feeAsset}</td>
-                  <td>{trade.pnl}</td>
+                  <td>{trade.pnl.toPrecision(5)}</td>
                   <td>{trade.pnlPercentage.toPrecision(2)}%</td>
                 </tr>
               )

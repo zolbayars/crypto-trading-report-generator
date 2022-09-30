@@ -21,8 +21,8 @@ export class ReportsService {
     const paramsObj: BinanceReq = {
       timestamp: DateTime.now().toMillis().toString(),
       // @todo get this from front-end
-      startTime: DateTime.now().minus({ weeks: 3 }).toMillis().toString(),
-      endTime: DateTime.now().minus({ weeks: 2 }).toMillis().toString(),
+      startTime: DateTime.now().minus({ weeks: 1 }).toMillis().toString(),
+      endTime: DateTime.now().minus({ weeks: 0 }).toMillis().toString(),
     };
 
     const queryString = new URLSearchParams(paramsObj).toString();

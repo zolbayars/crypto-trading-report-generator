@@ -33,7 +33,6 @@ const getTradeDirection = (trade: BinanceTrade): TradeDirection => {
 
 const getTradeSize = (
   relatedTrades: BinanceTrade[],
-  isBreakeven: boolean,
   exitType: TradeExitTypes,
 ): number => {
   let sizeOfEntry = 0;
@@ -42,25 +41,26 @@ const getTradeSize = (
   for (const trade of relatedTrades) {
     const qty = parseFloat(trade.qty);
     if (trade.side === exitType) {
-      sizeOfEntry += qty;
-    } else {
       sizeOfExit += qty;
+    } else {
+      sizeOfEntry += qty;
     }
   }
 
-  if (sizeOfExit > 0 && sizeOfEntry !== sizeOfExit) {
+  if (
+    sizeOfExit > 0 &&
+    sizeOfEntry.toPrecision(5) !== sizeOfExit.toPrecision(5)
+  ) {
     console.error(
-      'aaa Discprenancy in exit and entry trade sizes:',
+      'Discprenancy in exit and entry trade sizes:',
       sizeOfEntry,
       sizeOfExit,
-      'isBreakeven?',
-      isBreakeven,
       relatedTrades,
     );
     throw new Error('Discprenancy in exit and entry trade sizes!');
   }
 
-  return !isBreakeven ? sizeOfEntry : sizeOfEntry / 2;
+  return sizeOfEntry;
 };
 
 const mergeRelatedTrades = (
@@ -107,7 +107,7 @@ const mergeRelatedTrades = (
     mergedTrade.exitTradeIds.push(mergedTrade.entryTradeIds[0]);
   }
 
-  const tradeSize = getTradeSize(relatedTrades, isBreakeven, exitType);
+  const tradeSize = getTradeSize(relatedTrades, exitType);
   mergedTrade.size = tradeSize;
   mergedTrade.pnlPercentage =
     (mergedTrade.pnl - mergedTrade.fee * 100) /

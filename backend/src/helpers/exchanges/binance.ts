@@ -1,7 +1,15 @@
 import { BinanceTrade, Trade, TradeDirection } from '@shared/types';
 
+enum TradeExitTypes {
+  BUY = 'BUY',
+  SELL = 'SELL',
+}
+
 interface RelatedTrades {
-  [symbol: string]: BinanceTrade[];
+  [symbol: string]: {
+    trades: BinanceTrade[];
+    exitType: TradeExitTypes;
+  };
 }
 
 const getTradeDirection = (trade: BinanceTrade): TradeDirection => {
@@ -26,13 +34,14 @@ const getTradeDirection = (trade: BinanceTrade): TradeDirection => {
 const getTradeSize = (
   relatedTrades: BinanceTrade[],
   isBreakeven: boolean,
+  exitType: TradeExitTypes,
 ): number => {
   let sizeOfEntry = 0;
   let sizeOfExit = 0;
 
   for (const trade of relatedTrades) {
     const qty = parseFloat(trade.qty);
-    if (trade.realizedPnl === '0') {
+    if (trade.side === exitType) {
       sizeOfEntry += qty;
     } else {
       sizeOfExit += qty;
@@ -44,6 +53,8 @@ const getTradeSize = (
       'aaa Discprenancy in exit and entry trade sizes:',
       sizeOfEntry,
       sizeOfExit,
+      'isBreakeven?',
+      isBreakeven,
       relatedTrades,
     );
     throw new Error('Discprenancy in exit and entry trade sizes!');
@@ -52,7 +63,10 @@ const getTradeSize = (
   return !isBreakeven ? sizeOfEntry : sizeOfEntry / 2;
 };
 
-const mergeRelatedTrades = (relatedTrades: BinanceTrade[]): Trade => {
+const mergeRelatedTrades = (
+  relatedTrades: BinanceTrade[],
+  exitType: TradeExitTypes,
+): Trade => {
   const mergedTrade = {
     entryTradeIds: [],
     exitTradeIds: [],
@@ -93,7 +107,7 @@ const mergeRelatedTrades = (relatedTrades: BinanceTrade[]): Trade => {
     mergedTrade.exitTradeIds.push(mergedTrade.entryTradeIds[0]);
   }
 
-  const tradeSize = getTradeSize(relatedTrades, isBreakeven);
+  const tradeSize = getTradeSize(relatedTrades, isBreakeven, exitType);
   mergedTrade.size = tradeSize;
   mergedTrade.pnlPercentage =
     (mergedTrade.pnl - mergedTrade.fee * 100) /
@@ -112,11 +126,15 @@ export const mergeTrades = (trades: BinanceTrade[]): Trade[] => {
     const qty = parseFloat(trade.qty);
     const { symbol } = trade;
 
-    if (relatedTrades[symbol]) {
-      relatedTrades[symbol].push(trade);
+    if (!relatedTrades[symbol]) {
+      // the first trade of a batch of related trades is the exit one (or one of the exit trades)
+      relatedTrades[symbol] = {
+        trades: [trade],
+        exitType:
+          trade.side === 'BUY' ? TradeExitTypes.BUY : TradeExitTypes.SELL,
+      };
     } else {
-      relatedTrades[symbol] = [];
-      relatedTrades[symbol].push(trade);
+      relatedTrades[symbol].trades.push(trade);
     }
 
     // realizedPnl equals 0 when the trade is entry or when the trade is exited with breakeven
@@ -131,7 +149,12 @@ export const mergeTrades = (trades: BinanceTrade[]): Trade[] => {
 
       // Means we went through all the relevant entry trades of the exit trades we saved in exitTrades
       if (exitTrades[trade.symbol] === 0) {
-        mergedTrades.push(mergeRelatedTrades(relatedTrades[symbol]));
+        mergedTrades.push(
+          mergeRelatedTrades(
+            relatedTrades[symbol].trades,
+            relatedTrades[symbol].exitType,
+          ),
+        );
 
         // Clean up, so we can process other trades with similar symbols as well
         delete exitTrades[trade.symbol];

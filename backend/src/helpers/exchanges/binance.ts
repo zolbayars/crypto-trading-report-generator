@@ -137,6 +137,7 @@ export const mergeTrades = (trades: BinanceTrade[]): Trade[] => {
       relatedTrades[symbol].trades.push(trade);
     }
 
+    // Please not this logic assumes the trades are prcessed in LIFO order!
     // realizedPnl equals 0 when the trade is entry or when the trade is exited with breakeven
     if (trade.realizedPnl !== '0') {
       // A structure like this: { 'XLMUSDT': 150 }

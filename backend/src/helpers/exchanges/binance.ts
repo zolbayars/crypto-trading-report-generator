@@ -92,10 +92,10 @@ const mergeRelatedTrades = (
       mergedTrade.entryPrice = price;
     }
 
-    if (trade.realizedPnl === '0') {
-      mergedTrade.entryTradeIds.push(trade.id);
-    } else {
+    if (trade.side === exitType) {
       mergedTrade.exitTradeIds.push(trade.id);
+    } else {
+      mergedTrade.entryTradeIds.push(trade.id);
     }
   }
 

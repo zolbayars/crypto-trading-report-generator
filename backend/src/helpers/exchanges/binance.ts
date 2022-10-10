@@ -109,9 +109,10 @@ const mergeRelatedTrades = (
 
   const tradeSize = getTradeSize(relatedTrades, exitType);
   mergedTrade.size = tradeSize;
+
+  // @todo Deduct the fee
   mergedTrade.pnlPercentage =
-    (mergedTrade.pnl - mergedTrade.fee * 100) /
-    (tradeSize * mergedTrade.entryPrice);
+    mergedTrade.pnl / (tradeSize * mergedTrade.entryPrice);
 
   return mergedTrade;
 };

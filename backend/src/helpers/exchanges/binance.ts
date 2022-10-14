@@ -138,19 +138,21 @@ export const mergeTrades = (trades: BinanceTrade[]): Trade[] => {
       relatedTrades[symbol].trades.push(trade);
     }
 
-    // Please not this logic assumes the trades are prcessed in LIFO order!
+    const isExitTrade = trade.side === relatedTrades[symbol].exitType;
+    const isBreakevenExitTrade = isExitTrade && trade.realizedPnl === '0';
+
+    // Please note: this logic assumes the trades are prcessed in LIFO order!
     // realizedPnl equals 0 when the trade is entry or when the trade is exited with breakeven
-    if (trade.realizedPnl !== '0') {
+    if (isExitTrade || isBreakevenExitTrade) {
       // A structure like this: { 'XLMUSDT': 150 }
-      exitTrades[symbol] = exitTrades[symbol] + qty || qty;
-      // breakeven trade
-    } else if (!exitTrades[trade.symbol]) {
-      exitTrades[symbol] = qty;
-    } else if (exitTrades[trade.symbol] > 0) {
-      exitTrades[symbol] -= qty;
+      const accumulatedQty = exitTrades[symbol] + qty || qty;
+      exitTrades[symbol] = accumulatedQty;
+    } else {
+      const subtractedQty = (exitTrades[symbol] - qty).toPrecision(5);
+      exitTrades[symbol] = subtractedQty;
 
       // Means we went through all the relevant entry trades of the exit trades we saved in exitTrades
-      if (exitTrades[trade.symbol] === 0) {
+      if (parseFloat(exitTrades[symbol]) === 0) {
         mergedTrades.push(
           mergeRelatedTrades(
             relatedTrades[symbol].trades,
@@ -159,7 +161,7 @@ export const mergeTrades = (trades: BinanceTrade[]): Trade[] => {
         );
 
         // Clean up, so we can process other trades with similar symbols as well
-        delete exitTrades[trade.symbol];
+        delete exitTrades[symbol];
         delete relatedTrades[symbol];
       }
     }

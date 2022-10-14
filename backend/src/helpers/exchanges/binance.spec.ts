@@ -3,6 +3,7 @@ import { TradeDirection } from '@shared/types';
 import {
   multipleExitTradesWithSomeZeroPnL,
   multipleSimpleTrades,
+  multiExitMultiEntryTrade,
 } from '../../../test/mocks/binanceResponses';
 
 describe('Binance helper', () => {
@@ -21,7 +22,7 @@ describe('Binance helper', () => {
           fee: 0.00018276000000000002,
           feeAsset: 'BNB',
           pnl: -0.005008,
-          pnlPercentage: -0.00023979711376305047,
+          pnlPercentage: -0.000051576359118938196,
           size: 18495,
           symbol: 'REEFUSDT',
         },
@@ -42,7 +43,7 @@ describe('Binance helper', () => {
           fee: 0.00012796,
           feeAsset: 'BNB',
           pnl: 0.02149,
-          pnlPercentage: 0.00008281683942401622,
+          pnlPercentage: 0.00020470829068577277,
           size: 214.9,
           symbol: 'XRPUSDT',
         },
@@ -57,9 +58,78 @@ describe('Binance helper', () => {
           fee: 0.00012832,
           feeAsset: 'BNB',
           pnl: 0.4617,
-          pnlPercentage: 0.004271955170300324,
+          pnlPercentage: 0.0043940795559666975,
           size: 243,
           symbol: 'ADAUSDT',
+        },
+      ]);
+    });
+
+    it('should work correctly when there are numerous exit and entry trades with a same pair', () => {
+      const result = mergeTrades(multiExitMultiEntryTrade);
+      expect(result).toEqual([
+        {
+          direction: 0,
+          entryDate: 1665547760219,
+          entryPrice: 0.488,
+          entryTradeIds: [972992022, 972992021, 972992020],
+          exitDate: 1665551097728,
+          exitPrice: 0.4868,
+          exitTradeIds: [973019756, 973019757],
+          fee: 0.0039108400000000005,
+          feeAsset: 'BNB',
+          pnl: -4.85364,
+          pnlPercentage: -0.002459016393442623,
+          size: 4044.7,
+          symbol: 'XRPUSDT',
+        },
+        {
+          direction: 1,
+          entryDate: 1665545356037,
+          entryPrice: 0.4844,
+          entryTradeIds: [972968460, 972968459, 972968458],
+          exitDate: 1665547714968,
+          exitPrice: 0.4881,
+          exitTradeIds: [
+            972991566, 972991567, 972991568, 972991569, 972991570, 972991571,
+            972991572, 972991573,
+          ],
+          fee: 0.00580377,
+          feeAsset: 'BNB',
+          pnl: -22.200000000000003,
+          pnlPercentage: -0.007638315441783651,
+          size: 6000,
+          symbol: 'XRPUSDT',
+        },
+        {
+          direction: 0,
+          entryDate: 1665542046118,
+          entryPrice: 0.4845,
+          entryTradeIds: [972944785, 972943831],
+          exitDate: 1665543865101,
+          exitPrice: 0.4846,
+          exitTradeIds: [972959853],
+          fee: 0.00633136,
+          feeAsset: 'BNB',
+          pnl: 0.65763999,
+          pnlPercentage: 0.00020639834567473937,
+          size: 6576.4,
+          symbol: 'XRPUSDT',
+        },
+        {
+          direction: 1,
+          entryDate: 1665483390119,
+          entryPrice: 0.48,
+          entryTradeIds: [971985953],
+          exitDate: 1665497702075,
+          exitPrice: 0.4931,
+          exitTradeIds: [972254773],
+          fee: 0.0017504499999999997,
+          feeAsset: 'BNB',
+          pnl: -23.58,
+          pnlPercentage: -0.027291666666666665,
+          size: 1800,
+          symbol: 'XRPUSDT',
         },
       ]);
     });

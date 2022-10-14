@@ -36,3 +36,7 @@ export interface Trade {
   exitTradeIds: number[];
   entryTradeIds: number[];
 }
+
+export interface StringMap {
+  [key: string]: string;
+}

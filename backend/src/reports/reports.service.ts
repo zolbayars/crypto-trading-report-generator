@@ -1,58 +1,55 @@
 import { Injectable } from '@nestjs/common';
 import { DateTime } from 'luxon';
-import axios from 'axios';
-import { BinanceTrade } from '@shared/types';
-import { signWithSha256 } from '../utils';
-import { mergeTrades } from '../helpers/exchanges/binance';
-
-interface BinanceReq {
-  [key: string]: string;
-}
+import { BinanceTrade, StringMap, Trade } from '@shared/types';
+import { mergeTrades, binanceGet } from '../helpers/exchanges/binance';
 
 @Injectable()
 export class ReportsService {
-  async getTrades(): Promise<object[]> {
-    const binanceClient = axios.create({
-      baseURL: 'https://fapi.binance.com/',
-      timeout: 3000,
-      headers: { 'X-MBX-APIKEY': process.env.BINANCE_API_KEY },
-    });
-
-    const paramsObj: BinanceReq = {
-      timestamp: DateTime.now().toMillis().toString(),
-      // @todo get this from front-end
-      startTime: DateTime.now().minus({ weeks: 1 }).toMillis().toString(),
-      endTime: DateTime.now().minus({ weeks: 0 }).toMillis().toString(),
+  async getTrades(
+    startTime: DateTime,
+    endTime: DateTime,
+    reverseOrder = true,
+  ): Promise<Trade[]> {
+    const paramsObj: StringMap = {
+      startTime: startTime.toMillis().toString(),
+      endTime: endTime.toMillis().toString(),
     };
 
-    const queryString = new URLSearchParams(paramsObj).toString();
-
-    paramsObj.signature = signWithSha256(
-      queryString,
-      process.env.BINANCE_SECRET,
-    );
-
     try {
-      const res = await binanceClient.get('fapi/v1/userTrades', {
-        params: paramsObj,
-      });
+      const result = await binanceGet('fapi/v1/userTrades', paramsObj);
+      const trades = result as BinanceTrade[];
 
-      console.log('Result from exchange', res.status, res.statusText);
-
-      const trades = res.data as BinanceTrade[];
-
-      // Sorting because Binance sends the oldest trades at the beginning of the array
-      trades.sort((a, b) => b.time - a.time);
+      if (reverseOrder) {
+        // Sorting because Binance sends the oldest trades at the beginning of the array
+        trades.sort((a, b) => b.time - a.time);
+      }
 
       console.log(`Fetched ${trades.length} trades`);
 
       return mergeTrades(trades);
     } catch (error) {
-      console.error('Error while fetching user trades from exchange', error);
-
       throw new Error(
         `Could not get the users's trades due to ${error.message}`,
       );
     }
+  }
+
+  async syncTrades(): Promise<void> {
+    // @todo get this as an interval from front-end
+    const LAST_N_WEEKS_TO_SYNC = 15;
+    const allTrades = [];
+
+    for (let i = LAST_N_WEEKS_TO_SYNC; i >= 1; i--) {
+      const trades = await this.getTrades(
+        DateTime.now().minus({ weeks: i }),
+        DateTime.now().minus({ weeks: i - 1 }),
+      );
+
+      allTrades.push(...trades);
+    }
+
+    console.log('All trades: ' + allTrades.length);
+    console.log('First', allTrades[0]);
+    console.log('Last', allTrades[allTrades.length - 1]);
   }
 }

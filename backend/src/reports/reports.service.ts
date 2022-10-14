@@ -5,24 +5,26 @@ import { mergeTrades, binanceGet } from '../helpers/exchanges/binance';
 
 @Injectable()
 export class ReportsService {
-  async getTrades(
+  async getIndividualTrades(
     startTime: DateTime,
     endTime: DateTime,
-    reverseOrder = true,
-  ): Promise<Trade[]> {
+  ): Promise<BinanceTrade[]> {
     const paramsObj: StringMap = {
       startTime: startTime.toMillis().toString(),
       endTime: endTime.toMillis().toString(),
     };
 
-    try {
-      const result = await binanceGet('fapi/v1/userTrades', paramsObj);
-      const trades = result as BinanceTrade[];
+    const result = await binanceGet('fapi/v1/userTrades', paramsObj);
+    const trades = result as BinanceTrade[];
+    return trades;
+  }
 
-      if (reverseOrder) {
-        // Sorting because Binance sends the oldest trades at the beginning of the array
-        trades.sort((a, b) => b.time - a.time);
-      }
+  async getTrades(startTime: DateTime, endTime: DateTime): Promise<Trade[]> {
+    try {
+      const trades = await this.getIndividualTrades(startTime, endTime);
+
+      // Sorting because Binance sends the oldest trades at the beginning of the array
+      trades.sort((a, b) => b.time - a.time);
 
       console.log(`Fetched ${trades.length} trades`);
 
@@ -40,7 +42,7 @@ export class ReportsService {
     const allTrades = [];
 
     for (let i = LAST_N_WEEKS_TO_SYNC; i >= 1; i--) {
-      const trades = await this.getTrades(
+      const trades = await this.getIndividualTrades(
         DateTime.now().minus({ weeks: i }),
         DateTime.now().minus({ weeks: i - 1 }),
       );

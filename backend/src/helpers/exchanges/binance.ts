@@ -122,6 +122,9 @@ export const mergeTrades = (trades: BinanceTrade[]): Trade[] => {
   const relatedTrades: RelatedTrades = {};
   const mergedTrades: Trade[] = [];
 
+  let exitTradeOrderId;
+  let entryTradeOrderId;
+
   for (let i = 0; i < trades.length; i++) {
     const trade = trades[i];
     const qty = parseFloat(trade.qty);
@@ -134,19 +137,27 @@ export const mergeTrades = (trades: BinanceTrade[]): Trade[] => {
         exitType:
           trade.side === 'BUY' ? TradeExitTypes.BUY : TradeExitTypes.SELL,
       };
+
+      exitTradeOrderId = trade.orderId;
     } else {
       relatedTrades[symbol].trades.push(trade);
+
+      if (trade.orderId !== exitTradeOrderId && trade.realizedPnl === '0') {
+        entryTradeOrderId = trade.orderId;
+      }
     }
 
-    // Please not this logic assumes the trades are prcessed in LIFO order!
+    // console.info('exitTrades', exitTrades);
+    console.info('exitTradeOrderId', exitTradeOrderId);
+    console.info('entryTradeOrderId', entryTradeOrderId);
+
+    // Please note: this logic assumes the trades are prcessed in LIFO order!
     // realizedPnl equals 0 when the trade is entry or when the trade is exited with breakeven
-    if (trade.realizedPnl !== '0') {
+    if (trade.orderId === exitTradeOrderId) {
       // A structure like this: { 'XLMUSDT': 150 }
       exitTrades[symbol] = exitTrades[symbol] + qty || qty;
       // breakeven trade
-    } else if (!exitTrades[trade.symbol]) {
-      exitTrades[symbol] = qty;
-    } else if (exitTrades[trade.symbol] > 0) {
+    } else if (trade.orderId === entryTradeOrderId) {
       exitTrades[symbol] -= qty;
 
       // Means we went through all the relevant entry trades of the exit trades we saved in exitTrades
@@ -157,11 +168,11 @@ export const mergeTrades = (trades: BinanceTrade[]): Trade[] => {
             relatedTrades[symbol].exitType,
           ),
         );
-
-        // Clean up, so we can process other trades with similar symbols as well
-        delete exitTrades[trade.symbol];
-        delete relatedTrades[symbol];
       }
+    } else {
+      // Clean up, so we can process other trades with similar symbols as well
+      delete exitTrades[trade.symbol];
+      delete relatedTrades[symbol];
     }
   }
 

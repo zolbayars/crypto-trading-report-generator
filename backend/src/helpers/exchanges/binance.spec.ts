@@ -3,6 +3,7 @@ import { TradeDirection } from '@shared/types';
 import {
   multipleExitTradesWithSomeZeroPnL,
   multipleSimpleTrades,
+  multiExitMultiEntryTrade,
 } from '../../../test/mocks/binanceResponses';
 
 describe('Binance helper', () => {
@@ -21,7 +22,7 @@ describe('Binance helper', () => {
           fee: 0.00018276000000000002,
           feeAsset: 'BNB',
           pnl: -0.005008,
-          pnlPercentage: -0.00023979711376305047,
+          pnlPercentage: -0.000051576359118938196,
           size: 18495,
           symbol: 'REEFUSDT',
         },
@@ -42,7 +43,7 @@ describe('Binance helper', () => {
           fee: 0.00012796,
           feeAsset: 'BNB',
           pnl: 0.02149,
-          pnlPercentage: 0.00008281683942401622,
+          pnlPercentage: 0.00020470829068577277,
           size: 214.9,
           symbol: 'XRPUSDT',
         },
@@ -57,11 +58,16 @@ describe('Binance helper', () => {
           fee: 0.00012832,
           feeAsset: 'BNB',
           pnl: 0.4617,
-          pnlPercentage: 0.004271955170300324,
+          pnlPercentage: 0.0043940795559666975,
           size: 243,
           symbol: 'ADAUSDT',
         },
       ]);
+    });
+
+    it.only('should work correctly when there are multiple exit and entry trades', () => {
+      const result = mergeTrades(multiExitMultiEntryTrade);
+      expect(result).toEqual([]);
     });
   });
 });

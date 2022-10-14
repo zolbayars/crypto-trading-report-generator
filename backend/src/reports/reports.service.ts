@@ -45,6 +45,7 @@ export class ReportsService {
       trades.sort((a, b) => b.time - a.time);
 
       console.log(`Fetched ${trades.length} trades`);
+      console.log('trades', trades);
 
       return mergeTrades(trades);
     } catch (error) {

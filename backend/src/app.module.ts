@@ -14,7 +14,7 @@ import { TradesModule } from './trades/trades.module';
       username: process.env.DB_USERNAME,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
-      entities: [],
+      autoLoadEntities: true,
       synchronize: process.env.DB_SYNCHRONIZE as unknown as boolean,
     }),
   ],

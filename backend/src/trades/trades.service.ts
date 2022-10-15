@@ -1,10 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import { DateTime } from 'luxon';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { BinanceTrade, StringMap, Trade } from '@shared/types';
 import { mergeTrades, binanceGet } from '../helpers/exchanges/binance';
+import { Trade as TradeEntity } from './trade.entity';
 
 @Injectable()
 export class TradesService {
+  constructor(
+    @InjectRepository(TradeEntity)
+    private tradesRepository: Repository<TradeEntity>,
+    private dataSource: DataSource,
+  ) {}
+
   async getIndividualTrades(
     startTime: DateTime,
     endTime: DateTime,
@@ -17,6 +26,49 @@ export class TradesService {
     const result = await binanceGet('fapi/v1/userTrades', paramsObj);
     const trades = result as BinanceTrade[];
     return trades;
+  }
+
+  async saveTrades(trades: BinanceTrade[]): Promise<string | null> {
+    let error = null;
+    const queryRunner = this.dataSource.createQueryRunner();
+
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    try {
+      for (const trade of trades) {
+        await queryRunner.manager.save({
+          exchangeTradeId: trade.id,
+          exchangeOrderId: trade.orderId,
+          symbol: trade.symbol,
+          side: trade.side,
+          price: trade.price,
+          qty: trade.qty,
+          quoteQty: trade.quoteQty,
+          realizedPnl: trade.realizedPnl,
+          marginAsset: trade.marginAsset,
+          commission: trade.commission,
+          commissionAsset: trade.commissionAsset,
+          exchangeCreatedAt: trade.time,
+          positionSide: trade.positionSide,
+          isBuyer: trade.buyer,
+          isMaker: trade.maker,
+          marketType: 'futures',
+          exchange: 'binance',
+        });
+      }
+
+      await queryRunner.commitTransaction();
+    } catch (err) {
+      console.error('Error while saving trades. Rolling back', err);
+
+      error = err.message;
+
+      await queryRunner.rollbackTransaction();
+    } finally {
+      await queryRunner.release();
+    }
+
+    return error;
   }
 
   async getTrades(startTime: DateTime, endTime: DateTime): Promise<Trade[]> {

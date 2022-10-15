@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ReportsModule } from './reports/reports.module';
+import { TradesModule } from './trades/trades.module';
 
 @Module({
   imports: [
-    ReportsModule,
+    TradesModule,
     ConfigModule.forRoot(),
     TypeOrmModule.forRoot({
       type: 'mysql',

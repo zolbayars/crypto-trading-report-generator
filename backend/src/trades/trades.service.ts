@@ -4,7 +4,7 @@ import { BinanceTrade, StringMap, Trade } from '@shared/types';
 import { mergeTrades, binanceGet } from '../helpers/exchanges/binance';
 
 @Injectable()
-export class ReportsService {
+export class TradesService {
   async getIndividualTrades(
     startTime: DateTime,
     endTime: DateTime,

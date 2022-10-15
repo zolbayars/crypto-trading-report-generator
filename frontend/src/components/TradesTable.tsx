@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Trade } from '@shared/types';
 import { DateTime } from 'luxon';
 
-interface ReportTableProps {
+interface TradesTableProps {
   fromId: number | null
 }
 
@@ -11,13 +11,13 @@ const formatTimestamp = (timestamp: number) => {
   return `${date.toFormat('yyyy-MM-dd HH:mm:ss')}`
 }
 
-function ReportTable(props: ReportTableProps) {
+function TradesTable(props: TradesTableProps) {
 
   const [trades, setTrades] = useState<Trade[]>([])
 
   useEffect(() => {
     const fetchData = async (): Promise<void> => {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_BASE_URL}/reports`);
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_BASE_URL}/trades`);
       
       // @todo type
       const result = await response.json();
@@ -32,7 +32,7 @@ function ReportTable(props: ReportTableProps) {
   }, [props.fromId]);
 
   return (
-    <table className="reports">
+    <table className="trades">
       <tbody>
         {
             trades.map(trade => {
@@ -58,4 +58,4 @@ function ReportTable(props: ReportTableProps) {
   );
 }
 
-export default ReportTable;
+export default TradesTable;

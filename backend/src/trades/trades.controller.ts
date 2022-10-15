@@ -1,20 +1,20 @@
 import { Controller, Get, Post } from '@nestjs/common';
 import { DateTime } from 'luxon';
-import { ReportsService } from './reports.service';
+import { TradesService } from './trades.service';
 
-@Controller('reports')
-export class ReportsController {
-  constructor(private readonly reportService: ReportsService) {}
+@Controller('trades')
+export class TradesController {
+  constructor(private readonly tradesService: TradesService) {}
 
   @Get()
-  async getReport(): Promise<object> {
+  async getTrades(): Promise<object> {
     let trades = [];
     let errorMsg = null;
 
     // @todo type
     try {
       // @todo get this from front-end
-      trades = await this.reportService.getTrades(
+      trades = await this.tradesService.getTrades(
         DateTime.now().minus({ weeks: 1 }),
         DateTime.now().minus({ weeks: 0 }),
       );
@@ -33,7 +33,7 @@ export class ReportsController {
     let errorMsg = null;
 
     try {
-      await this.reportService.syncTrades();
+      await this.tradesService.syncTrades();
     } catch (error) {
       errorMsg = error.message;
     }

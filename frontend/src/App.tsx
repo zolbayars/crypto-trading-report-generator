@@ -1,12 +1,12 @@
 import React from 'react';
 import './App.css';
-import ReportTable from './components/ReportTable'
+import TradesTable from './components/TradesTable'
 
 function App() {
   return (
     <div className="App">
       <div className="main-page">
-        <ReportTable fromId = {null}/>
+        <TradesTable fromId = {null}/>
       </div>
     </div>
   );

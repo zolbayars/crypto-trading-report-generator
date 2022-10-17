@@ -65,6 +65,18 @@ export class MergedTrade {
   @OneToMany((type) => Trade, (entryTrade) => entryTrade.mergedAsEntryTrade)
   exitTrades: Trade[];
 
+  @Column({ nullable: true })
+  entryReason: string;
+
+  @Column({ nullable: true })
+  exitReason: string;
+
+  @Column({ nullable: true })
+  mistake: string;
+
+  @Column({ nullable: true })
+  comment: string;
+
   @CreateDateColumn()
   createdAt: Date;
 

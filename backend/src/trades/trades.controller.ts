@@ -1,6 +1,10 @@
-import { Controller, Get, Post } from '@nestjs/common';
+import { Controller, Get, Post, Body } from '@nestjs/common';
 import { DateTime } from 'luxon';
 import { TradesService } from './trades.service';
+
+interface BodySyncTrades {
+  'earlist-week-to-get': number;
+}
 
 @Controller('trades')
 export class TradesController {
@@ -28,12 +32,13 @@ export class TradesController {
     };
   }
 
+  //@todo validate the body
   @Post('sync-trades')
-  async syncTrades(): Promise<object> {
+  async syncTrades(@Body() body: BodySyncTrades): Promise<object> {
     let errorMsg = null;
 
     try {
-      await this.tradesService.syncTrades();
+      await this.tradesService.syncTrades(body['earlist-week-to-get']);
     } catch (error) {
       errorMsg = error.message;
     }

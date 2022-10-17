@@ -6,7 +6,10 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   Index,
+  ManyToOne,
 } from 'typeorm';
+
+import { MergedTrade } from './mergedTrade.entity';
 
 export enum MarketType {
   FUTURES = 'futures',
@@ -24,10 +27,10 @@ export class Trade {
   id: number;
 
   @Index()
-  @Column()
+  @Column({ type: 'bigint' })
   exchangeTradeId: number;
 
-  @Column()
+  @Column({ type: 'bigint' })
   exchangeOrderId: number;
 
   @Column()
@@ -80,6 +83,12 @@ export class Trade {
     enum: Exchange,
   })
   exchange: Exchange;
+
+  @ManyToOne(() => MergedTrade, (mergedTrade) => mergedTrade.entryTrades)
+  mergedAsEntryTrade: MergedTrade;
+
+  @ManyToOne(() => MergedTrade, (mergedTrade) => mergedTrade.exitTrades)
+  mergedAsExitTrade: MergedTrade;
 
   @CreateDateColumn()
   createdAt: Date;

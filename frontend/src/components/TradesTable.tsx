@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Trade } from '@shared/types';
+import { MergedTrade } from '../types';
 import { DateTime } from 'luxon';
 
 interface TradesTableProps {
   fromId: number | null
 }
 
-const formatTimestamp = (timestamp: number) => {
-  const date = DateTime.fromMillis(timestamp);
+const formatTimestamp = (dateTime: string) => {
+  const date = DateTime.fromISO(dateTime);
   return `${date.toFormat('yyyy-MM-dd HH:mm:ss')}`
 }
 
 function TradesTable(props: TradesTableProps) {
 
-  const [trades, setTrades] = useState<Trade[]>([])
+  const [trades, setTrades] = useState<MergedTrade[]>([])
 
   useEffect(() => {
     const fetchData = async (): Promise<void> => {

@@ -1,16 +1,20 @@
 import { Injectable } from '@nestjs/common';
 import { DateTime } from 'luxon';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, In } from 'typeorm';
 import { BinanceTrade, StringMap, Trade } from '@shared/types';
 import { mergeTrades, binanceGet } from '../helpers/exchanges/binance';
-import { Trade as TradeEntity } from './trade.entity';
+import { Trade as TradeEntity, MarketType, Exchange } from './trade.entity';
+import { MergedTrade as MergedTradeEntity } from './mergedTrade.entity';
+import { formatExchangeNumber } from '../utils';
 
 @Injectable()
 export class TradesService {
   constructor(
     @InjectRepository(TradeEntity)
     private tradesRepository: Repository<TradeEntity>,
+    @InjectRepository(MergedTradeEntity)
+    private mergedTradesRepository: Repository<MergedTradeEntity>,
     private dataSource: DataSource,
   ) {}
 
@@ -31,32 +35,36 @@ export class TradesService {
   async saveTrades(trades: BinanceTrade[]): Promise<string | null> {
     let error = null;
     const queryRunner = this.dataSource.createQueryRunner();
+    const tradesToSave: TradeEntity[] = [];
 
     await queryRunner.connect();
     await queryRunner.startTransaction();
+
     try {
       for (const trade of trades) {
-        await queryRunner.manager.save({
-          exchangeTradeId: trade.id,
-          exchangeOrderId: trade.orderId,
-          symbol: trade.symbol,
-          side: trade.side,
-          price: trade.price,
-          qty: trade.qty,
-          quoteQty: trade.quoteQty,
-          realizedPnl: trade.realizedPnl,
-          marginAsset: trade.marginAsset,
-          commission: trade.commission,
-          commissionAsset: trade.commissionAsset,
-          exchangeCreatedAt: trade.time,
-          positionSide: trade.positionSide,
-          isBuyer: trade.buyer,
-          isMaker: trade.maker,
-          marketType: 'futures',
-          exchange: 'binance',
-        });
+        const tradeEntity = new TradeEntity();
+        tradeEntity.exchangeTradeId = trade.id;
+        tradeEntity.exchangeOrderId = trade.orderId;
+        tradeEntity.symbol = trade.symbol;
+        tradeEntity.side = trade.side;
+        tradeEntity.price = formatExchangeNumber(trade.price);
+        tradeEntity.qty = formatExchangeNumber(trade.qty);
+        tradeEntity.quoteQty = formatExchangeNumber(trade.quoteQty);
+        tradeEntity.realizedPnl = formatExchangeNumber(trade.realizedPnl);
+        tradeEntity.marginAsset = trade.marginAsset;
+        tradeEntity.commission = formatExchangeNumber(trade.commission);
+        tradeEntity.commissionAsset = trade.commissionAsset;
+        tradeEntity.exchangeCreatedAt = new Date(trade.time);
+        tradeEntity.positionSide = trade.positionSide;
+        tradeEntity.isBuyer = trade.buyer;
+        tradeEntity.isMaker = trade.maker;
+        tradeEntity.marketType = MarketType.FUTURES;
+        tradeEntity.exchange = Exchange.BINANCE;
+
+        tradesToSave.push(tradeEntity);
       }
 
+      await queryRunner.manager.save(tradesToSave);
       await queryRunner.commitTransaction();
     } catch (err) {
       console.error('Error while saving trades. Rolling back', err);
@@ -71,29 +79,71 @@ export class TradesService {
     return error;
   }
 
-  async getTrades(startTime: DateTime, endTime: DateTime): Promise<Trade[]> {
+  async saveMergedTrades(trades: Trade[]): Promise<string | null> {
+    let error = null;
+    const queryRunner = this.dataSource.createQueryRunner();
+    const mergedTradesToSave: MergedTradeEntity[] = [];
+
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
     try {
-      const trades = await this.getIndividualTrades(startTime, endTime);
+      for (const trade of trades) {
+        const entryTrades = await this.tradesRepository.findBy({
+          exchangeTradeId: In(trade.entryTradeIds),
+        });
 
-      // Sorting because Binance sends the oldest trades at the beginning of the array
-      trades.sort((a, b) => b.time - a.time);
+        const exitTrades = await this.tradesRepository.findBy({
+          exchangeTradeId: In(trade.exitTradeIds),
+        });
 
-      console.log(`Fetched ${trades.length} trades`);
+        const mergedTradeEntity = new MergedTradeEntity();
+        mergedTradeEntity.entryDate = new Date(trade.entryDate);
+        mergedTradeEntity.exitDate = new Date(trade.exitDate);
+        mergedTradeEntity.symbol = trade.symbol;
+        mergedTradeEntity.direction = trade.direction;
+        mergedTradeEntity.entryPrice = trade.entryPrice;
+        mergedTradeEntity.exitPrice = trade.exitPrice;
+        mergedTradeEntity.size = trade.size;
+        mergedTradeEntity.pnl = trade.pnl;
+        mergedTradeEntity.pnlPercentage = trade.pnlPercentage;
+        mergedTradeEntity.fee = trade.fee;
+        mergedTradeEntity.feeAsset = trade.feeAsset;
+        mergedTradeEntity.entryTrades = entryTrades;
+        mergedTradeEntity.exitTrades = exitTrades;
 
-      return mergeTrades(trades);
-    } catch (error) {
-      throw new Error(
-        `Could not get the users's trades due to ${error.message}`,
-      );
+        mergedTradesToSave.push(mergedTradeEntity);
+      }
+
+      await queryRunner.manager.save(mergedTradesToSave);
+      await queryRunner.commitTransaction();
+    } catch (err) {
+      console.error('Error while saving trades. Rolling back', err);
+
+      error = err.message;
+
+      await queryRunner.rollbackTransaction();
+    } finally {
+      await queryRunner.release();
     }
+
+    return error;
   }
 
-  async syncTrades(): Promise<void> {
-    // @todo get this as an interval from front-end
-    const LAST_N_WEEKS_TO_SYNC = 15;
-    const allTrades = [];
+  async getTrades(
+    startTime: DateTime,
+    endTime: DateTime,
+  ): Promise<MergedTradeEntity[]> {
+    const mergedTrades = await this.mergedTradesRepository.findAndCountBy({});
+    console.log(`Fetched ${mergedTrades[1]} trades from db`);
 
-    for (let i = LAST_N_WEEKS_TO_SYNC; i >= 1; i--) {
+    return mergedTrades[0];
+  }
+
+  async syncTrades(earliestWeekToGet: number): Promise<void> {
+    const allTrades: BinanceTrade[] = [];
+
+    for (let i = earliestWeekToGet; i >= 1; i--) {
       const trades = await this.getIndividualTrades(
         DateTime.now().minus({ weeks: i }),
         DateTime.now().minus({ weeks: i - 1 }),
@@ -102,8 +152,29 @@ export class TradesService {
       allTrades.push(...trades);
     }
 
-    console.log('All trades: ' + allTrades.length);
-    console.log('First', allTrades[0]);
-    console.log('Last', allTrades[allTrades.length - 1]);
+    console.log(`Saving ${allTrades.length} trades`);
+
+    const errorWhileSaving = await this.saveTrades(allTrades);
+
+    if (errorWhileSaving) {
+      throw new Error(errorWhileSaving);
+    } else {
+      console.info('Saved trades');
+    }
+
+    // Sorting because Binance sends the oldest trades at the beginning of the array
+    allTrades.sort((a, b) => b.time - a.time);
+
+    const draftMergedTrades = mergeTrades(allTrades);
+
+    console.log(`Saving ${draftMergedTrades.length} merged trades`);
+
+    const error = await this.saveMergedTrades(draftMergedTrades);
+
+    if (error) {
+      throw new Error(errorWhileSaving);
+    } else {
+      console.info('Saved merged trades');
+    }
   }
 }

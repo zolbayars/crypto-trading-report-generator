@@ -18,14 +18,25 @@ export class TradesService {
     private dataSource: DataSource,
   ) {}
 
+  // The parameter fromId cannot be sent with startTime or endTime
+  // @see https://binance-docs.github.io/apidocs/futures/en/#account-trade-list-user_data
   async getIndividualTrades(
     startTime: DateTime,
     endTime: DateTime,
+    fromId: number = null,
   ): Promise<BinanceTrade[]> {
-    const paramsObj: StringMap = {
-      startTime: startTime.toMillis().toString(),
-      endTime: endTime.toMillis().toString(),
-    };
+    let paramsObj: StringMap;
+
+    if (fromId) {
+      paramsObj = {
+        fromId: fromId + '',
+      };
+    } else {
+      paramsObj = {
+        startTime: startTime.toMillis().toString(),
+        endTime: endTime.toMillis().toString(),
+      };
+    }
 
     const result = await binanceGet('fapi/v1/userTrades', paramsObj);
     const trades = result as BinanceTrade[];
@@ -134,32 +145,49 @@ export class TradesService {
     startTime: DateTime,
     endTime: DateTime,
   ): Promise<MergedTradeEntity[]> {
+    const latestTrade = await this.tradesRepository
+      .createQueryBuilder()
+      .orderBy('exchangeTradeId', 'DESC')
+      .getOne();
+
+    console.log('The latest trade is: ', latestTrade.exchangeTradeId);
+    console.log('Syncing the trades');
+
+    // Because Binance returns the trade with the given id as well
+    const nonInclusiveLatestId = latestTrade.exchangeTradeId + 1;
+
+    await this.syncTrades(1, nonInclusiveLatestId);
+
     const mergedTrades = await this.mergedTradesRepository.findAndCountBy({});
     console.log(`Fetched ${mergedTrades[1]} trades from db`);
 
     return mergedTrades[0];
   }
 
-  async syncTrades(earliestWeekToGet: number): Promise<void> {
+  async syncTrades(
+    earliestWeekToGet = 1,
+    fromId: number = null,
+  ): Promise<void> {
     const allTrades: BinanceTrade[] = [];
 
     for (let i = earliestWeekToGet; i >= 1; i--) {
       const trades = await this.getIndividualTrades(
         DateTime.now().minus({ weeks: i }),
         DateTime.now().minus({ weeks: i - 1 }),
+        fromId,
       );
 
       allTrades.push(...trades);
     }
 
-    console.log(`Saving ${allTrades.length} trades`);
+    console.log(`Syncing ${allTrades.length} trades`);
 
     const errorWhileSaving = await this.saveTrades(allTrades);
 
     if (errorWhileSaving) {
       throw new Error(errorWhileSaving);
     } else {
-      console.info('Saved trades');
+      console.info('Individual trades are synced');
     }
 
     // Sorting because Binance sends the oldest trades at the beginning of the array

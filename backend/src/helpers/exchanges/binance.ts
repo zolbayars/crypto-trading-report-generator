@@ -188,6 +188,8 @@ const getBinanceClient = () => {
 export const binanceGet = async (url: string, params: StringMap) => {
   const binanceClient = getBinanceClient();
 
+  console.info(`Calling binance with`, url, params);
+
   params.timestamp = DateTime.now().toMillis().toString();
   const queryString = new URLSearchParams(params).toString();
   params.signature = signWithSha256(queryString, process.env.BINANCE_SECRET);

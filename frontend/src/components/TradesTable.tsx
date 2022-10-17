@@ -44,7 +44,7 @@ function TradesTable(props: TradesTableProps) {
                   <td>{trade.direction === 0 ? "Long" : "Short"}</td>
                   <td>{trade.entryPrice}</td>
                   <td>{trade.exitPrice}</td>
-                  <td>{trade.size}</td>
+                  <td>{trade.size.toPrecision(5)}</td>
                   <td>{trade.fee.toPrecision(5)}</td>
                   <td>{trade.feeAsset}</td>
                   <td>{trade.pnl.toPrecision(5)}</td>

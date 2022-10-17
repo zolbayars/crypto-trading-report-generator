@@ -1,4 +1,7 @@
-import { BinanceTrade, Trade, TradeDirection } from '@shared/types';
+import axios from 'axios';
+import { DateTime } from 'luxon';
+import { BinanceTrade, Trade, TradeDirection, StringMap } from '@shared/types';
+import { signWithSha256 } from '../../utils';
 
 enum TradeExitTypes {
   BUY = 'BUY',
@@ -170,4 +173,36 @@ export const mergeTrades = (trades: BinanceTrade[]): Trade[] => {
   console.info('merged trades', mergedTrades.length);
 
   return mergedTrades;
+};
+
+const getBinanceClient = () => {
+  const binanceClient = axios.create({
+    baseURL: 'https://fapi.binance.com/',
+    timeout: 3000,
+    headers: { 'X-MBX-APIKEY': process.env.BINANCE_API_KEY },
+  });
+
+  return binanceClient;
+};
+
+export const binanceGet = async (url: string, params: StringMap) => {
+  const binanceClient = getBinanceClient();
+
+  console.info(`Calling binance with`, url, params);
+
+  params.timestamp = DateTime.now().toMillis().toString();
+  const queryString = new URLSearchParams(params).toString();
+  params.signature = signWithSha256(queryString, process.env.BINANCE_SECRET);
+
+  try {
+    const res = await binanceClient.get(url, { params });
+
+    console.log('Result from Binance', res.status, res.statusText);
+
+    return res.data;
+  } catch (error) {
+    console.error(`Error while getting ${url} from Binance`, { params }, error);
+
+    throw new Error(error.message);
+  }
 };

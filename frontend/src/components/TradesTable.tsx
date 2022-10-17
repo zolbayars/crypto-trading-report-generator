@@ -1,23 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { Trade } from '@shared/types';
+import { MergedTrade } from '../types';
 import { DateTime } from 'luxon';
 
-interface ReportTableProps {
+interface TradesTableProps {
   fromId: number | null
 }
 
-const formatTimestamp = (timestamp: number) => {
-  const date = DateTime.fromMillis(timestamp);
+const formatTimestamp = (dateTime: string) => {
+  const date = DateTime.fromISO(dateTime);
   return `${date.toFormat('yyyy-MM-dd HH:mm:ss')}`
 }
 
-function ReportTable(props: ReportTableProps) {
+function TradesTable(props: TradesTableProps) {
 
-  const [trades, setTrades] = useState<Trade[]>([])
+  const [trades, setTrades] = useState<MergedTrade[]>([])
 
   useEffect(() => {
     const fetchData = async (): Promise<void> => {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_BASE_URL}/reports`);
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_BASE_URL}/trades`);
       
       // @todo type
       const result = await response.json();
@@ -32,7 +32,7 @@ function ReportTable(props: ReportTableProps) {
   }, [props.fromId]);
 
   return (
-    <table className="reports">
+    <table className="trades">
       <tbody>
         {
             trades.map(trade => {
@@ -44,7 +44,7 @@ function ReportTable(props: ReportTableProps) {
                   <td>{trade.direction === 0 ? "Long" : "Short"}</td>
                   <td>{trade.entryPrice}</td>
                   <td>{trade.exitPrice}</td>
-                  <td>{trade.size}</td>
+                  <td>{trade.size.toPrecision(5)}</td>
                   <td>{trade.fee.toPrecision(5)}</td>
                   <td>{trade.feeAsset}</td>
                   <td>{trade.pnl.toPrecision(5)}</td>
@@ -58,4 +58,4 @@ function ReportTable(props: ReportTableProps) {
   );
 }
 
-export default ReportTable;
+export default TradesTable;

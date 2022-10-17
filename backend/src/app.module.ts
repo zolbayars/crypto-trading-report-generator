@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ReportsModule } from './reports/reports.module';
+import { TradesModule } from './trades/trades.module';
 
 @Module({
   imports: [
-    ReportsModule,
+    TradesModule,
     ConfigModule.forRoot(),
     TypeOrmModule.forRoot({
       type: 'mysql',
@@ -14,7 +14,7 @@ import { ReportsModule } from './reports/reports.module';
       username: process.env.DB_USERNAME,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
-      entities: [],
+      autoLoadEntities: true,
       synchronize: process.env.DB_SYNCHRONIZE as unknown as boolean,
     }),
   ],

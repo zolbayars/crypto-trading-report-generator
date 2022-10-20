@@ -4,6 +4,7 @@ export enum TradeDirection {
 }
 
 export interface MergedTrade {
+  id: number;
   entryDate: string;
   exitDate: string;
   symbol: string;

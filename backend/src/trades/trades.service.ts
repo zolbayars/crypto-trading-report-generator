@@ -18,25 +18,14 @@ export class TradesService {
     private dataSource: DataSource,
   ) {}
 
-  // The parameter fromId cannot be sent with startTime or endTime
-  // @see https://binance-docs.github.io/apidocs/futures/en/#account-trade-list-user_data
   async getIndividualTrades(
     startTime: DateTime,
     endTime: DateTime,
-    fromId: number = null,
   ): Promise<BinanceTrade[]> {
-    let paramsObj: StringMap;
-
-    if (fromId) {
-      paramsObj = {
-        fromId: fromId + '',
-      };
-    } else {
-      paramsObj = {
-        startTime: startTime.toMillis().toString(),
-        endTime: endTime.toMillis().toString(),
-      };
-    }
+    const paramsObj = {
+      startTime: startTime.toMillis().toString(),
+      endTime: endTime.toMillis().toString(),
+    };
 
     const result = await binanceGet('fapi/v1/userTrades', paramsObj);
     const trades = result as BinanceTrade[];
@@ -147,37 +136,52 @@ export class TradesService {
   ): Promise<MergedTradeEntity[]> {
     const latestTrade = await this.tradesRepository
       .createQueryBuilder()
-      .orderBy('exchangeTradeId', 'DESC')
+      .orderBy('exchangeCreatedAt', 'DESC')
       .getOne();
 
-    console.log('The latest trade is: ', latestTrade.exchangeTradeId);
+    console.log(
+      'The latest trade was made at: ',
+      latestTrade.exchangeCreatedAt,
+    );
     console.log('Syncing the trades');
 
-    // Because Binance returns the trade with the given id as well
-    const nonInclusiveLatestId = latestTrade.exchangeTradeId + 1;
+    // Addition of 1s (1000 millis) is necessary here to prevent re-fetching the last trade
+    await this.syncTrades(
+      DateTime.fromJSDate(latestTrade.exchangeCreatedAt).toMillis() + 1000,
+    );
 
-    await this.syncTrades(1, nonInclusiveLatestId);
+    const mergedTrades = await this.mergedTradesRepository
+      .createQueryBuilder()
+      .orderBy('exitDate', 'DESC')
+      .getManyAndCount();
 
-    const mergedTrades = await this.mergedTradesRepository.findAndCountBy({});
     console.log(`Fetched ${mergedTrades[1]} trades from db`);
 
     return mergedTrades[0];
   }
 
-  async syncTrades(
-    earliestWeekToGet = 1,
-    fromId: number = null,
-  ): Promise<void> {
+  async syncTrades(sinceXMilliseconds: number): Promise<void> {
     const allTrades: BinanceTrade[] = [];
 
-    for (let i = earliestWeekToGet; i >= 1; i--) {
-      const trades = await this.getIndividualTrades(
-        DateTime.now().minus({ weeks: i }),
-        DateTime.now().minus({ weeks: i - 1 }),
-        fromId,
-      );
+    const fromDate = DateTime.fromMillis(sinceXMilliseconds);
+    let startDate = fromDate;
 
+    while (startDate < DateTime.now()) {
+      let endDate = startDate.plus({ weeks: 1 });
+
+      if (endDate > DateTime.now()) {
+        endDate = DateTime.now();
+      }
+
+      const trades = await this.getIndividualTrades(startDate, endDate);
       allTrades.push(...trades);
+
+      startDate = startDate.plus({ weeks: 1 });
+    }
+
+    if (!allTrades.length) {
+      console.log(`No new trades to sync`);
+      return;
     }
 
     console.log(`Syncing ${allTrades.length} trades`);

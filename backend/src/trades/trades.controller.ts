@@ -38,7 +38,7 @@ export class TradesController {
     let errorMsg = null;
 
     try {
-      await this.tradesService.syncTrades(body['earlist-week-to-get']);
+      await this.tradesService.syncTrades(body['since-x-milliseconds']);
     } catch (error) {
       errorMsg = error.message;
     }

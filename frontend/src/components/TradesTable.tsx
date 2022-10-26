@@ -1,30 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { DateTime } from 'luxon';
 import Table from '@mui/material/Table';
+import TableCell from '@mui/material/TableCell';
 import TableBody from '@mui/material/TableBody';
-import TableCell, { TableCellProps } from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import TableContainer from '@mui/material/TableContainer';
-import { styled } from '@mui/material/styles';
-import { MergedTrade } from '../types';
+import { MergedTrade, NumericValuesInTrade, TradeNumbericMetrics } from '../types';
+import TableCellPnL from './TableCellPnL';
 
 interface TradesTableProps {
   fromId: number | null
 }
-
-interface StyledTableCellProps extends TableCellProps {
-  numericValue: number;
-}
-
-const StyledTableCell = styled(TableCell)<StyledTableCellProps>(({ theme, numericValue }) => ({
-  ...(numericValue > 0 && {
-    backgroundColor: 'rgba(52, 168, 83, .9)'
-  }),
-  ...(numericValue < 0 && {
-    backgroundColor: 'rgba(234, 67, 53, .9)'
-  })
-}));
 
 const formatTimestamp = (dateTime: string) => {
   const date = DateTime.fromISO(dateTime);
@@ -34,6 +21,12 @@ const formatTimestamp = (dateTime: string) => {
 function TradesTable(props: TradesTableProps) {
 
   const [trades, setTrades] = useState<MergedTrade[]>([])
+  const [tradeNumericMetrics, setTradeNumericMetrics] = useState<TradeNumbericMetrics>({
+    maxPnL: 0,
+    maxPnLPercentage: 0,
+    minPnL: 0,
+    minPnLPercentage: 0
+  })
 
   useEffect(() => {
     const fetchData = async (): Promise<void> => {
@@ -44,12 +37,42 @@ function TradesTable(props: TradesTableProps) {
       console.log('result', result);
 
       if (!result.errorMsg) {
-        setTrades(result.trades)    
+        const { trades } = result;
+        setTrades(trades)
       } 
-
     }
+
     fetchData();    
+  
   }, [props.fromId]);
+
+  useEffect(() => {
+    const getMaxValue = (propName: NumericValuesInTrade) => {
+      let max = -Infinity;
+      trades.forEach(trade => {
+        max = Math.max(max, trade[propName] as number);
+      });
+  
+      console.log('max', max)
+      return max;
+    }
+  
+    const getMinValue = (propName: NumericValuesInTrade) => {
+      let min = +Infinity;
+      trades.forEach(trade => {
+        min = Math.min(min, trade[propName] as number);
+      });
+  
+      return min;
+    }
+
+    setTradeNumericMetrics({
+      maxPnL: getMaxValue(NumericValuesInTrade.pnl),
+      minPnL: getMinValue(NumericValuesInTrade.pnl),
+      maxPnLPercentage: getMaxValue(NumericValuesInTrade.pnlPercentage),
+      minPnLPercentage: getMinValue(NumericValuesInTrade.pnlPercentage),
+    })
+  }, [trades]);
 
   return (
     <TableContainer sx={{ maxHeight: 800 }}>
@@ -81,8 +104,8 @@ function TradesTable(props: TradesTableProps) {
                   <TableCell>{trade.exitPrice}</TableCell>
                   <TableCell>{trade.size.toPrecision(5)}</TableCell>
                   <TableCell>{trade.fee.toPrecision(5)} {trade.feeAsset}</TableCell>
-                  <StyledTableCell numericValue={trade.pnl}>{trade.pnl.toPrecision(5)}</StyledTableCell>
-                  <StyledTableCell numericValue={trade.pnlPercentage}>{trade.pnlPercentage.toPrecision(2)}%</StyledTableCell>
+                  <TableCellPnL numericValue={trade.pnl} numericValueType={NumericValuesInTrade.pnl} tradeNumericMetrics={tradeNumericMetrics}>{trade.pnl.toPrecision(5)}</TableCellPnL>
+                  <TableCellPnL numericValue={trade.pnlPercentage} numericValueType={NumericValuesInTrade.pnlPercentage} tradeNumericMetrics={tradeNumericMetrics}>{`${trade.pnlPercentage.toPrecision(2)}%`}</TableCellPnL>
                 </TableRow>
               )
             })

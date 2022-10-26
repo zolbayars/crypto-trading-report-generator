@@ -19,3 +19,15 @@ export interface MergedTrade {
   exitTradeIds: number[];
   entryTradeIds: number[];
 }
+
+export enum NumericValuesInTrade {
+  pnl = "pnl",
+  pnlPercentage = "pnlPercentage",
+}
+
+export interface TradeNumbericMetrics {
+  maxPnL: number;
+  maxPnLPercentage: number;
+  minPnL: number;
+  minPnLPercentage: number;
+}

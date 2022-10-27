@@ -95,7 +95,7 @@ function TradesTable(props: TradesTableProps) {
           {
             trades.map(trade => {
               return (
-                <TableRow key={trade.id}>
+                <TableRow hover key={trade.id}>
                   <TableCell>{formatTimestamp(trade.entryDate)}</TableCell>
                   <TableCell>{formatTimestamp(trade.exitDate)}</TableCell>
                   <TableCell>{trade.symbol}</TableCell>

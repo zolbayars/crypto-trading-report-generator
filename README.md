@@ -36,3 +36,8 @@ yarn start
 **v0.1**
 
 ![image](https://user-images.githubusercontent.com/3589907/193196358-721af7e2-ca05-4f49-a5ce-3d949f813388.png)
+
+**v0.2**
+
+![image](https://user-images.githubusercontent.com/3589907/198265095-1b71fde2-553c-44e1-838c-c1249071297e.png)
+

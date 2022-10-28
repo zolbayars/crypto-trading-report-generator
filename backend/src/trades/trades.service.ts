@@ -2,10 +2,13 @@ import { Injectable } from '@nestjs/common';
 import { DateTime } from 'luxon';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, In } from 'typeorm';
-import { BinanceTrade, StringMap, Trade } from '@shared/types';
+import { BinanceTrade, Trade } from '@shared/types';
 import { mergeTrades, binanceGet } from '../helpers/exchanges/binance';
 import { Trade as TradeEntity, MarketType, Exchange } from './trade.entity';
-import { MergedTrade as MergedTradeEntity } from './mergedTrade.entity';
+import {
+  MergedTrade,
+  MergedTrade as MergedTradeEntity,
+} from './mergedTrade.entity';
 import { formatExchangeNumber } from '../utils';
 
 @Injectable()
@@ -141,14 +144,15 @@ export class TradesService {
 
     console.log(
       'The latest trade was made at: ',
-      latestTrade.exchangeCreatedAt,
+      latestTrade?.exchangeCreatedAt,
     );
-    console.log('Syncing the trades');
+
+    const fromDate = !!latestTrade?.exchangeCreatedAt
+      ? DateTime.fromJSDate(latestTrade?.exchangeCreatedAt)
+      : startTime;
 
     // Addition of 1s (1000 millis) is necessary here to prevent re-fetching the last trade
-    await this.syncTrades(
-      DateTime.fromJSDate(latestTrade.exchangeCreatedAt).toMillis() + 1000,
-    );
+    await this.syncTrades(fromDate.toMillis() + 1000);
 
     const mergedTrades = await this.mergedTradesRepository
       .createQueryBuilder()
@@ -160,13 +164,23 @@ export class TradesService {
     return mergedTrades[0];
   }
 
-  async syncTrades(sinceXMilliseconds: number): Promise<void> {
+  async syncTrades(
+    sinceXMilliseconds: number,
+    tillXMilliseconds?: number,
+  ): Promise<void> {
     const allTrades: BinanceTrade[] = [];
 
     const fromDate = DateTime.fromMillis(sinceXMilliseconds);
+
     let startDate = fromDate;
 
-    while (startDate < DateTime.now()) {
+    const tillDate = tillXMilliseconds
+      ? DateTime.fromMillis(tillXMilliseconds)
+      : DateTime.now();
+
+    console.log(`Syncing the trades from ${fromDate} till ${tillDate}`);
+
+    while (startDate < tillDate) {
       let endDate = startDate.plus({ weeks: 1 });
 
       if (endDate > DateTime.now()) {

@@ -62,7 +62,7 @@ export class MergedTrade {
   @OneToMany((type) => Trade, (entryTrade) => entryTrade.mergedAsEntryTrade)
   entryTrades: Trade[];
 
-  @OneToMany((type) => Trade, (entryTrade) => entryTrade.mergedAsEntryTrade)
+  @OneToMany((type) => Trade, (exitTrade) => exitTrade.mergedAsExitTrade)
   exitTrades: Trade[];
 
   @Column({ nullable: true })

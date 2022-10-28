@@ -3,7 +3,8 @@ import { DateTime } from 'luxon';
 import { TradesService } from './trades.service';
 
 interface BodySyncTrades {
-  'earlist-week-to-get': number;
+  'since-x-milliseconds': string;
+  'till-x-milliseconds': string;
 }
 
 @Controller('trades')
@@ -38,7 +39,10 @@ export class TradesController {
     let errorMsg = null;
 
     try {
-      await this.tradesService.syncTrades(body['since-x-milliseconds']);
+      await this.tradesService.syncTrades(
+        parseInt(body['since-x-milliseconds']),
+        parseInt(body['till-x-milliseconds']),
+      );
     } catch (error) {
       errorMsg = error.message;
     }

@@ -114,11 +114,15 @@ export class TradesService {
         mergedTradeEntity.feeAsset = trade.feeAsset;
         mergedTradeEntity.entryTrades = entryTrades;
         mergedTradeEntity.exitTrades = exitTrades;
+        mergedTradeEntity.id = null;
 
         mergedTradesToSave.push(mergedTradeEntity);
       }
 
-      await queryRunner.manager.save(mergedTradesToSave);
+      await queryRunner.manager.upsert(MergedTrade, mergedTradesToSave, [
+        'entryDate',
+        'exitDate',
+      ]);
       await queryRunner.commitTransaction();
     } catch (err) {
       console.error('Error while saving trades. Rolling back', err);
@@ -153,6 +157,7 @@ export class TradesService {
 
     // Addition of 1s (1000 millis) is necessary here to prevent re-fetching the last trade
     await this.syncTrades(fromDate.toMillis() + 1000);
+    await this.mergeExistingTrades();
 
     const mergedTrades = await this.mergedTradesRepository
       .createQueryBuilder()
@@ -162,6 +167,47 @@ export class TradesService {
     console.log(`Fetched ${mergedTrades[1]} trades from db`);
 
     return mergedTrades[0];
+  }
+
+  async mergeExistingTrades() {
+    const notMergedTrades = await this.tradesRepository
+      .createQueryBuilder()
+      .where('mergedAsEntryTradeId is NULL')
+      .andWhere('mergedAsExitTradeId is NULL')
+      .orderBy('exchangeCreatedAt', 'ASC')
+      .getManyAndCount();
+
+    console.log(`Found ${notMergedTrades[1]} not yet merged trades`);
+
+    const tradesMappedToBinanceObj: BinanceTrade[] = notMergedTrades[0].map(
+      (trade) => ({
+        ...trade,
+        time: DateTime.fromJSDate(trade.exchangeCreatedAt).toMillis(),
+        orderId: trade.exchangeOrderId,
+        buyer: !!trade.isBuyer,
+        maker: !!trade.isMaker,
+        price: trade.price + '',
+        qty: trade.qty + '',
+        realizedPnl: trade.realizedPnl + '',
+        quoteQty: trade.quoteQty + '',
+        commission: trade.commission + '',
+      }),
+    );
+
+    const draftMergedTrades = mergeTrades(tradesMappedToBinanceObj);
+
+    console.log(
+      `Saving ${draftMergedTrades.length} merged trades`,
+      draftMergedTrades,
+    );
+
+    const error = await this.saveMergedTrades(draftMergedTrades);
+
+    if (error) {
+      throw new Error(error);
+    } else {
+      console.info('Saved merged trades');
+    }
   }
 
   async syncTrades(
@@ -218,7 +264,7 @@ export class TradesService {
     const error = await this.saveMergedTrades(draftMergedTrades);
 
     if (error) {
-      throw new Error(errorWhileSaving);
+      throw new Error(error);
     } else {
       console.info('Saved merged trades');
     }

@@ -114,15 +114,11 @@ export class TradesService {
         mergedTradeEntity.feeAsset = trade.feeAsset;
         mergedTradeEntity.entryTrades = entryTrades;
         mergedTradeEntity.exitTrades = exitTrades;
-        mergedTradeEntity.id = null;
 
         mergedTradesToSave.push(mergedTradeEntity);
       }
 
-      await queryRunner.manager.upsert(MergedTrade, mergedTradesToSave, [
-        'entryDate',
-        'exitDate',
-      ]);
+      await queryRunner.manager.save(mergedTradesToSave);
       await queryRunner.commitTransaction();
     } catch (err) {
       console.error('Error while saving trades. Rolling back', err);

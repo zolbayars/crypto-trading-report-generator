@@ -153,7 +153,7 @@ export class TradesService {
 
     // Addition of 1s (1000 millis) is necessary here to prevent re-fetching the last trade
     await this.syncTrades(fromDate.toMillis() + 1000);
-    await this.mergeExistingTrades();
+    // await this.mergeExistingTrades();
 
     const mergedTrades = await this.mergedTradesRepository
       .createQueryBuilder()

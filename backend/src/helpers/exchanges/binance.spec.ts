@@ -71,42 +71,9 @@ describe('Binance helper', () => {
       expect(result).toEqual([
         {
           direction: 0,
-          entryDate: 1665547760219,
-          entryPrice: 0.488,
-          entryTradeIds: [972992022, 972992021, 972992020],
-          exitDate: 1665551097728,
-          exitPrice: 0.4868,
-          exitTradeIds: [973019756, 973019757],
-          fee: 0.0039108400000000005,
-          feeAsset: 'BNB',
-          pnl: -4.85364,
-          pnlPercentage: -0.002459016393442623,
-          size: 4044.7,
-          symbol: 'XRPUSDT',
-        },
-        {
-          direction: 1,
-          entryDate: 1665545356037,
-          entryPrice: 0.4844,
-          entryTradeIds: [972968460, 972968459, 972968458],
-          exitDate: 1665547714968,
-          exitPrice: 0.4881,
-          exitTradeIds: [
-            972991566, 972991567, 972991568, 972991569, 972991570, 972991571,
-            972991572, 972991573,
-          ],
-          fee: 0.00580377,
-          feeAsset: 'BNB',
-          pnl: -22.200000000000003,
-          pnlPercentage: -0.007638315441783651,
-          size: 6000,
-          symbol: 'XRPUSDT',
-        },
-        {
-          direction: 0,
           entryDate: 1665542046118,
           entryPrice: 0.4845,
-          entryTradeIds: [972944785, 972943831],
+          entryTradeIds: [972943831, 972944785],
           exitDate: 1665543865101,
           exitPrice: 0.4846,
           exitTradeIds: [972959853],
@@ -119,25 +86,59 @@ describe('Binance helper', () => {
         },
         {
           direction: 1,
-          entryDate: 1665483390119,
-          entryPrice: 0.48,
-          entryTradeIds: [971985953],
-          exitDate: 1665497702075,
-          exitPrice: 0.4931,
-          exitTradeIds: [972254773],
-          fee: 0.0017504499999999997,
+          entryDate: 1665545356037,
+          entryPrice: 0.4844,
+          entryTradeIds: [972968458, 972968459, 972968460],
+          exitDate: 1665547714968,
+          exitPrice: 0.4881,
+          exitTradeIds: [
+            972991566, 972991567, 972991568, 972991569, 972991570, 972991571,
+            972991572, 972991573,
+          ],
+          fee: 0.005803770000000001,
           feeAsset: 'BNB',
-          pnl: -23.58,
-          pnlPercentage: -0.027291666666666665,
-          size: 1800,
+          pnl: -22.200000000000003,
+          pnlPercentage: -0.007638315441783651,
+          size: 6000,
+          symbol: 'XRPUSDT',
+        },
+        {
+          direction: 0,
+          entryDate: 1665547760219,
+          entryPrice: 0.488,
+          entryTradeIds: [972992020, 972992021, 972992022],
+          exitDate: 1665551097728,
+          exitPrice: 0.4868,
+          exitTradeIds: [973019756, 973019757],
+          fee: 0.00391084,
+          feeAsset: 'BNB',
+          pnl: -4.85364,
+          pnlPercentage: -0.002459016393442623,
+          size: 4044.7,
           symbol: 'XRPUSDT',
         },
       ]);
     });
 
-    it('skippedTrades?', () => {
+    it('should work correctly when the trade was skipped previously due to sorting issue', () => {
       const result = mergeTrades(skippedTrades);
-      expect(result).toEqual([]);
+      expect(result).toEqual([
+        {
+          direction: 0,
+          entryDate: 1661397204673,
+          entryPrice: 1.676,
+          entryTradeIds: [456157119],
+          exitDate: 1661407279238,
+          exitPrice: 1.685,
+          exitTradeIds: [456221695, 456221696],
+          fee: 0.32980656,
+          feeAsset: 'USDT',
+          pnl: 2.9412000000000003,
+          pnlPercentage: 0.005369928400954654,
+          size: 326.8,
+          symbol: 'EOSUSDT',
+        },
+      ]);
     });
   });
 });

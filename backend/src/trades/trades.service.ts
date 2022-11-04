@@ -35,7 +35,7 @@ export class TradesService {
     return trades;
   }
 
-  async saveTrades(trades: BinanceTrade[]): Promise<string | null> {
+  async saveTrades(trades: BinanceTrade[]): Promise<void> {
     let error = null;
     const queryRunner = this.dataSource.createQueryRunner();
     const tradesToSave: TradeEntity[] = [];
@@ -79,10 +79,12 @@ export class TradesService {
       await queryRunner.release();
     }
 
-    return error;
+    if (error) {
+      throw new Error(error);
+    }
   }
 
-  async saveMergedTrades(trades: Trade[]): Promise<string | null> {
+  async saveMergedTrades(trades: Trade[]): Promise<void> {
     let error = null;
     const queryRunner = this.dataSource.createQueryRunner();
     const mergedTradesToSave: MergedTradeEntity[] = [];
@@ -130,7 +132,9 @@ export class TradesService {
       await queryRunner.release();
     }
 
-    return error;
+    if (error) {
+      throw new Error(error);
+    }
   }
 
   async getTrades(
@@ -153,7 +157,6 @@ export class TradesService {
 
     // Addition of 1s (1000 millis) is necessary here to prevent re-fetching the last trade
     await this.syncTrades(fromDate.toMillis() + 1000);
-    // await this.mergeExistingTrades();
 
     const mergedTrades = await this.mergedTradesRepository
       .createQueryBuilder()
@@ -163,47 +166,6 @@ export class TradesService {
     console.log(`Fetched ${mergedTrades[1]} trades from db`);
 
     return mergedTrades[0];
-  }
-
-  async mergeExistingTrades() {
-    const notMergedTrades = await this.tradesRepository
-      .createQueryBuilder()
-      .where('mergedAsEntryTradeId is NULL')
-      .andWhere('mergedAsExitTradeId is NULL')
-      .orderBy('exchangeCreatedAt', 'ASC')
-      .getManyAndCount();
-
-    console.log(`Found ${notMergedTrades[1]} not yet merged trades`);
-
-    const tradesMappedToBinanceObj: BinanceTrade[] = notMergedTrades[0].map(
-      (trade) => ({
-        ...trade,
-        time: DateTime.fromJSDate(trade.exchangeCreatedAt).toMillis(),
-        orderId: trade.exchangeOrderId,
-        buyer: !!trade.isBuyer,
-        maker: !!trade.isMaker,
-        price: trade.price + '',
-        qty: trade.qty + '',
-        realizedPnl: trade.realizedPnl + '',
-        quoteQty: trade.quoteQty + '',
-        commission: trade.commission + '',
-      }),
-    );
-
-    const draftMergedTrades = mergeTrades(tradesMappedToBinanceObj);
-
-    console.log(
-      `Saving ${draftMergedTrades.length} merged trades`,
-      draftMergedTrades,
-    );
-
-    const error = await this.saveMergedTrades(draftMergedTrades);
-
-    if (error) {
-      throw new Error(error);
-    } else {
-      console.info('Saved merged trades');
-    }
   }
 
   async syncTrades(
@@ -222,17 +184,25 @@ export class TradesService {
 
     console.log(`Syncing the trades from ${fromDate} till ${tillDate}`);
 
-    while (startDate < tillDate) {
-      let endDate = startDate.plus({ weeks: 1 });
+    const dateDiff = tillDate.diff(startDate, ['weeks']);
 
-      if (endDate > DateTime.now()) {
-        endDate = DateTime.now();
-      }
-
-      const trades = await this.getIndividualTrades(startDate, endDate);
+    // Binance restricts the filter by 1 week
+    if (dateDiff.weeks < 1) {
+      const trades = await this.getIndividualTrades(startDate, tillDate);
       allTrades.push(...trades);
+    } else {
+      while (startDate < tillDate) {
+        let endDate = startDate.plus({ weeks: 1 });
 
-      startDate = startDate.plus({ weeks: 1 });
+        if (endDate > DateTime.now()) {
+          endDate = DateTime.now();
+        }
+
+        const trades = await this.getIndividualTrades(startDate, endDate);
+        allTrades.push(...trades);
+
+        startDate = startDate.plus({ weeks: 1 });
+      }
     }
 
     if (!allTrades.length) {
@@ -240,29 +210,22 @@ export class TradesService {
       return;
     }
 
-    console.log(`Syncing ${allTrades.length} trades`);
+    console.log(`Saving ${allTrades.length} trades`);
+    console.log(allTrades);
 
-    const errorWhileSaving = await this.saveTrades(allTrades);
-
-    if (errorWhileSaving) {
-      throw new Error(errorWhileSaving);
-    } else {
-      console.info('Individual trades are synced');
-    }
-
-    // Sorting because Binance sends the oldest trades at the beginning of the array
-    allTrades.sort((a, b) => b.time - a.time);
+    await this.saveTrades(allTrades);
 
     const draftMergedTrades = mergeTrades(allTrades);
+    const onlyClosedTrades = draftMergedTrades.filter(
+      (trade) => !!trade.exitTradeIds.length,
+    );
 
-    console.log(`Saving ${draftMergedTrades.length} merged trades`);
+    console.log(
+      `There are ${draftMergedTrades.length} merged trades. ${onlyClosedTrades.length} of them were closed`,
+    );
 
-    const error = await this.saveMergedTrades(draftMergedTrades);
+    await this.saveMergedTrades(onlyClosedTrades);
 
-    if (error) {
-      throw new Error(error);
-    } else {
-      console.info('Saved merged trades');
-    }
+    console.log(`Sync is completed`);
   }
 }

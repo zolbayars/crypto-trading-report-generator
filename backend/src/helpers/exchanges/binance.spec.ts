@@ -4,6 +4,7 @@ import {
   multipleExitTradesWithSomeZeroPnL,
   multipleSimpleTrades,
   multiExitMultiEntryTrade,
+  skippedTrades,
 } from '../../../test/mocks/binanceResponses';
 
 describe('Binance helper', () => {
@@ -17,7 +18,7 @@ describe('Binance helper', () => {
           entryPrice: 0.00525,
           entryTradeIds: [109711556],
           exitDate: 1663075435848,
-          exitPrice: 0.00525,
+          exitPrice: 0.005249,
           exitTradeIds: [110221250, 110221251],
           fee: 0.00018276000000000002,
           feeAsset: 'BNB',
@@ -132,6 +133,11 @@ describe('Binance helper', () => {
           symbol: 'XRPUSDT',
         },
       ]);
+    });
+
+    it('skippedTrades?', () => {
+      const result = mergeTrades(skippedTrades);
+      expect(result).toEqual([]);
     });
   });
 });

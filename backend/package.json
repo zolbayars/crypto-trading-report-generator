@@ -28,6 +28,7 @@
     "@nestjs/typeorm": "^9.0.1",
     "axios": "^0.27.2",
     "luxon": "^3.0.3",
+    "mathjs": "^11.3.2",
     "mysql2": "^2.3.3",
     "reflect-metadata": "^0.1.13",
     "rimraf": "^3.0.2",

@@ -3,8 +3,8 @@ import { DateTime } from 'luxon';
 import { TradesService } from './trades.service';
 
 interface BodySyncTrades {
-  'since-x-milliseconds': string;
-  'till-x-milliseconds': string;
+  from: string;
+  to: string;
 }
 
 @Controller('trades')
@@ -38,10 +38,12 @@ export class TradesController {
   async syncTrades(@Body() body: BodySyncTrades): Promise<object> {
     let errorMsg = null;
 
+    const { from, to } = body;
+
     try {
       await this.tradesService.syncTrades(
-        parseInt(body['since-x-milliseconds']),
-        parseInt(body['till-x-milliseconds']),
+        DateTime.fromISO(from).toMillis(),
+        !!to ? DateTime.fromISO(to).toMillis() : null,
       );
     } catch (error) {
       errorMsg = error.message;

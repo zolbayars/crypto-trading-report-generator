@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { DateTime } from 'luxon';
+import { add, subtract, bignumber, number } from 'mathjs';
 import { BinanceTrade, Trade, TradeDirection, StringMap } from '@shared/types';
 import { signWithSha256 } from '../../utils';
 
@@ -44,22 +45,21 @@ const getTradeSize = (
   for (const trade of relatedTrades) {
     const qty = parseFloat(trade.qty);
     if (trade.side === exitType) {
-      sizeOfExit += qty;
+      sizeOfExit = number(add(bignumber(sizeOfExit), bignumber(qty)));
     } else {
-      sizeOfEntry += qty;
+      sizeOfEntry = number(add(bignumber(sizeOfEntry), bignumber(qty)));
     }
   }
 
-  if (
-    sizeOfExit > 0 &&
-    sizeOfEntry.toPrecision(5) !== sizeOfExit.toPrecision(5)
-  ) {
+  // Strict equality is not used here because compare() returns BigInteger and we have no other way to check if it's not 0
+  if (sizeOfExit > 0 && sizeOfEntry !== sizeOfExit) {
     console.error(
       'Discprenancy in exit and entry trade sizes:',
       sizeOfEntry,
       sizeOfExit,
       relatedTrades,
     );
+
     throw new Error('Discprenancy in exit and entry trade sizes!');
   }
 
@@ -83,8 +83,12 @@ const mergeRelatedTrades = (
 
     mergedTrade.symbol = trade.symbol;
     mergedTrade.direction = getTradeDirection(trade);
-    mergedTrade.fee += parseFloat(trade.commission);
-    mergedTrade.pnl += parseFloat(trade.realizedPnl);
+    mergedTrade.fee = number(
+      add(bignumber(mergedTrade.fee), bignumber(trade.commission)),
+    );
+    mergedTrade.pnl = number(
+      add(bignumber(mergedTrade.pnl), bignumber(trade.realizedPnl)),
+    );
 
     if (i === 0) {
       mergedTrade.entryDate = trade.time;
@@ -150,14 +154,18 @@ export const mergeTrades = (trades: BinanceTrade[]): Trade[] => {
     // realizedPnl equals 0 when the trade is entry or when the trade is exited with breakeven
     if (isEntryTrade) {
       // A structure like this: { 'XLMUSDT': 150 }
-      const accumulatedQty = entryTrades[symbol] + qty || qty;
+      const accumulatedQty = entryTrades[symbol]
+        ? add(bignumber(entryTrades[symbol]), bignumber(qty))
+        : bignumber(qty);
       entryTrades[symbol] = accumulatedQty;
     } else {
-      const subtractedQty = (entryTrades[symbol] - qty).toPrecision(5);
-      entryTrades[symbol] = subtractedQty;
+      entryTrades[symbol] = subtract(
+        bignumber(entryTrades[symbol]),
+        bignumber(qty),
+      );
 
       // Means we went through all the relevant entry trades of the exit trades we saved in exitTrades
-      if (parseFloat(entryTrades[symbol]) === 0) {
+      if (entryTrades[symbol] == 0) {
         mergedTrades.push(
           mergeRelatedTrades(
             relatedTrades[symbol].trades,
@@ -170,8 +178,6 @@ export const mergeTrades = (trades: BinanceTrade[]): Trade[] => {
         delete relatedTrades[symbol];
       }
     }
-
-    console.dir(entryTrades);
   }
 
   console.info('merged trades', mergedTrades.length);

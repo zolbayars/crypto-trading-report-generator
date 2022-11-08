@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { DateTime } from 'luxon';
 import { add, subtract, bignumber, number } from 'mathjs';
-import { BinanceTrade, Trade, TradeDirection, StringMap } from '@shared/types';
+import { BinanceTrade, Trade, TradeDirection, StringMap } from '../../types';
 import { signWithSha256 } from '../../utils';
 
 enum TradeExitTypes {

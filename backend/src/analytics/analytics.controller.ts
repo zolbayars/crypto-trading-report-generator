@@ -12,12 +12,12 @@ export class AnalyticsController {
     let analytics = {};
     let errorMsg = null;
 
-    const { from, to } = request.params;
+    const { from, to } = request.query;
 
     try {
       analytics = await this.analyticsService.getAnalytics(
-        DateTime.fromISO(from).toJSDate(),
-        DateTime.fromISO(to).toJSDate(),
+        DateTime.fromISO(from.toString()).toJSDate(),
+        DateTime.fromISO(to.toString()).toJSDate(),
       );
     } catch (error) {
       errorMsg = error.message;

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { TradesModule } from './trades/trades.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { TradesModule } from './trades/trades.module';
       autoLoadEntities: true,
       synchronize: process.env.DB_SYNCHRONIZE as unknown as boolean,
     }),
+    AnalyticsModule,
   ],
 })
 export class AppModule {}

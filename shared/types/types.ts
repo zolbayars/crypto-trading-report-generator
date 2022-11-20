@@ -40,3 +40,13 @@ export interface Trade {
 export interface StringMap {
   [key: string]: string;
 }
+
+export interface RateAndFactorMetrics {
+  winners: number;
+  losers: number;
+  breakevens: number;
+  winnersSum: number;
+  losersSum: number;
+  winrate: number;
+  profitFactor: number;
+}

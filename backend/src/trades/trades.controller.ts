@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Body } from '@nestjs/common';
 import { DateTime } from 'luxon';
+import { APIReturnType } from '@shared/types';
 import { TradesService } from './trades.service';
 
 interface BodySyncTrades {
@@ -12,11 +13,10 @@ export class TradesController {
   constructor(private readonly tradesService: TradesService) {}
 
   @Get()
-  async getTrades(): Promise<object> {
+  async getTrades(): Promise<APIReturnType> {
     let trades = [];
     let errorMsg = null;
 
-    // @todo type
     try {
       // @todo get this from front-end
       trades = await this.tradesService.getTrades(
@@ -35,7 +35,7 @@ export class TradesController {
 
   //@todo validate the body
   @Post('sync-trades')
-  async syncTrades(@Body() body: BodySyncTrades): Promise<object> {
+  async syncTrades(@Body() body: BodySyncTrades): Promise<APIReturnType> {
     let errorMsg = null;
 
     const { from, to } = body;

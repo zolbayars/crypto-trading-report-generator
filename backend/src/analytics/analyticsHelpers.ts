@@ -1,5 +1,5 @@
 import { add, divide, bignumber, number } from 'mathjs';
-import { RateAndFactorMetrics } from '@shared/types';
+import { RateAndFactorMetrics } from '../types';
 import { MergedTrade } from '../trades/mergedTrade.entity';
 
 export const calcPnL = (trades: MergedTrade[]) =>

@@ -19,9 +19,6 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "paths": {
-      "@shared/*": [ "../shared/types/*" ],
-    },
   },
   "include": [
     "src"

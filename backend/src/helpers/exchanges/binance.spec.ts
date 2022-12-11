@@ -1,5 +1,5 @@
 import { mergeTrades } from '../../../src/helpers/exchanges/binance';
-import { TradeDirection } from '@shared/types';
+import { TradeDirection } from '../../types';
 import {
   multipleExitTradesWithSomeZeroPnL,
   multipleSimpleTrades,

@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { DateTime } from 'luxon';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, In } from 'typeorm';
-import { BinanceTrade, Trade } from '@shared/types';
+import { BinanceTrade, Trade } from '../types';
 import { mergeTrades, binanceGet } from '../helpers/exchanges/binance';
 import { Trade as TradeEntity, MarketType, Exchange } from './trade.entity';
 import { MergedTrade as MergedTradeEntity } from './mergedTrade.entity';

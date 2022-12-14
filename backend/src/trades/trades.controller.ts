@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body } from '@nestjs/common';
 import { DateTime } from 'luxon';
-import { APIReturnType } from '@shared/types';
+import { APIReturnType } from '../types';
 import { TradesService } from './trades.service';
 
 interface BodySyncTrades {

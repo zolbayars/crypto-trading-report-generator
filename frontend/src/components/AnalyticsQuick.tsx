@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { PnLMetricsByMonths, APIReturnType } from '@shared/types';
+import { PnLMetricsByMonths, APIReturnType } from '../types';
 import PnL from './PnL';
 
 function AnalyticsQuick() {

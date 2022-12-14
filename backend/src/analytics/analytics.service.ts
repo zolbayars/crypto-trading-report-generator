@@ -4,7 +4,7 @@ import { Repository, DataSource, Between } from 'typeorm';
 import { Trade as TradeEntity } from '../trades/trade.entity';
 import { MergedTrade } from '../trades/mergedTrade.entity';
 import { getPnLMetrics } from './analyticsHelpers';
-import { PnLMetrics, PnLMetricsByMonths } from '@shared/types';
+import { PnLMetrics, PnLMetricsByMonths } from '../types';
 import { DateTime } from 'luxon';
 
 interface Interval {

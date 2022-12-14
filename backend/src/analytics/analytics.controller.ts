@@ -6,7 +6,7 @@ import {
   GetMetricsByLastNMonthsParams,
 } from './analytics.dto';
 import { Param, Query } from '@nestjs/common/decorators';
-import { APIReturnType } from '@shared/types';
+import { APIReturnType } from '../types';
 
 @Controller('analytics')
 export class AnalyticsController {

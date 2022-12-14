@@ -1,6 +1,6 @@
 import * as React from 'react';
 import Typography from '@mui/material/Typography';
-import { PnLMetrics } from '@shared/types';
+import { PnLMetrics } from '../types';
 import { DateTime } from 'luxon';
 
 interface PnLProps {

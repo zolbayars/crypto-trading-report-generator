@@ -3,7 +3,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, Between } from 'typeorm';
 import { Trade as TradeEntity } from '../trades/trade.entity';
 import { MergedTrade } from '../trades/mergedTrade.entity';
-import { calcPnL, getRateAndFactorMetrics } from './analyticsHelpers';
+import { getPnLMetrics } from './analyticsHelpers';
+import { PnLMetrics, PnLMetricsByMonths } from '../types';
+import { DateTime } from 'luxon';
+
+interface Interval {
+  from: DateTime;
+  to: DateTime;
+}
 
 @Injectable()
 export class AnalyticsService {
@@ -15,24 +22,55 @@ export class AnalyticsService {
     private dataSource: DataSource,
   ) {}
 
-  // @todo specify return type
-  async getAnalytics(from: Date, to: Date): Promise<object> {
+  async getAnalytics(from: DateTime, to: DateTime): Promise<PnLMetrics> {
     console.log(
-      `Calculating analytics for  trades from ${from.toISOString()} to ${to.toISOString()}`,
+      `Calculating analytics for trades from ${from.toISO()} to ${to.toISO()}`,
     );
 
     const relevantTrades = await this.mergedTradesRepository.findBy({
-      exitDate: Between(from, to),
+      exitDate: Between(from.toJSDate(), to.toJSDate()),
     });
 
     console.log(`There are ${relevantTrades.length} relevant trades`);
 
-    const pnl = calcPnL(relevantTrades);
-    const ratesAndFactors = getRateAndFactorMetrics(relevantTrades);
+    const pnlMetrics = getPnLMetrics(relevantTrades);
 
-    return {
-      pnl,
-      ...ratesAndFactors,
-    };
+    return pnlMetrics;
+  }
+
+  async getAnalyticsFromLastNMonths(n: number): Promise<PnLMetricsByMonths[]> {
+    console.log(`Calculating analytics for the last ${n} months`);
+
+    const result: PnLMetricsByMonths[] = [];
+    const thisMonth = DateTime.now().startOf('month');
+
+    const intervals: Interval[] = [];
+
+    for (let i = 0; i < n; i++) {
+      let from = thisMonth.minus({ month: i });
+      let to = thisMonth.minus({ month: i - 1 });
+
+      if (i === 0) {
+        from = thisMonth;
+        to = thisMonth.plus({ month: 1 });
+      }
+
+      intervals.push({
+        from,
+        to,
+      });
+    }
+
+    for (const { from, to } of intervals) {
+      const metrics = await this.getAnalytics(from, to);
+
+      result.push({
+        from: from.toJSDate(),
+        to: to.toJSDate(),
+        metrics,
+      });
+    }
+
+    return result;
   }
 }

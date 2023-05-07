@@ -1,0 +1,83 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+model merged_trade {
+  id            Int                    @id @default(autoincrement())
+  entryDate     DateTime               @db.DateTime(0)
+  exitDate      DateTime               @db.DateTime(0)
+  symbol        String                 @db.VarChar(255)
+  direction     merged_trade_direction
+  entryPrice    Float
+  exitPrice     Float
+  size          Float
+  pnl           Float
+  pnlPercentage Float
+  fee           Float
+  feeAsset      String                 @db.VarChar(255)
+  entryReason   String?                @db.VarChar(255)
+  exitReason    String?                @db.VarChar(255)
+  mistake       String?                @db.VarChar(255)
+  comment       String?                @db.VarChar(255)
+  createdAt     DateTime               @default(now()) @db.DateTime(6)
+  updatedAt     DateTime               @default(now()) @db.DateTime(6)
+
+  @@unique([entryDate, exitDate])
+  @@index([entryDate])
+}
+
+model trade {
+  id                   Int              @id @default(autoincrement())
+  exchangeTradeId      BigInt
+  exchangeOrderId      BigInt
+  symbol               String           @db.VarChar(255)
+  side                 String           @db.VarChar(255)
+  price                Float
+  qty                  Float
+  quoteQty             Float
+  realizedPnl          Float
+  marginAsset          String           @db.VarChar(255)
+  commission           Float
+  commissionAsset      String           @db.VarChar(255)
+  exchangeCreatedAt    DateTime         @db.DateTime(0)
+  positionSide         String           @db.VarChar(255)
+  isBuyer              Int              @db.TinyInt
+  isMaker              Int              @db.TinyInt
+  marketType           trade_marketType
+  exchange             trade_exchange
+  createdAt            DateTime         @default(now()) @db.DateTime(6)
+  updatedAt            DateTime         @default(now()) @db.DateTime(6)
+  mergedAsEntryTradeId Int?
+  mergedAsExitTradeId  Int?
+
+  @@unique([exchange, exchangeTradeId])
+  @@index([mergedAsExitTradeId])
+  @@index([mergedAsEntryTradeId])
+  @@index([exchangeTradeId])
+}
+
+model user {
+  id       Int    @id @default(autoincrement())
+  email    String @unique()
+  password String
+}
+
+enum merged_trade_direction {
+  long
+  short
+}
+
+enum trade_marketType {
+  futures
+  spot
+}
+
+enum trade_exchange {
+  binance
+}

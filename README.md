@@ -1,43 +1,19 @@
-# crypto-trading-report-generator
+A crypto trading report generator built with [Next.js](https://nextjs.org/)
 
-Currently it shows an arbitrary last week trade activity from Binance Futures. You can copy-paste the report table data into your own trading journal sheet.
+## Getting Started
 
-_In future, we might add other exchanges._
+First, run the development server:
 
-## Running locally
-
-Clone the repo first.
-
-```
-git clone https://github.com/zolbayars/crypto-trading-report-generator
-cd crypto-trading-report-generator
-```
-
-### Backend
-
-You need to create a `.env` file by copying `.env.sample` file inside `/backend` and provide your Binance API credentials. Please only enable reading access for your API key!
-
-```
-cd backend
-yarn start:dev
+```bash
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
 ```
 
-### Frontend
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You need to create a `.env.local` file by copying `.env.local.sample` file inside `/frontend` and provide everything detailed in there.
+## Deploy on Vercel
 
-```
-cd frontend
-yarn start
-```
-
-## Screenshots
-
-**v0.1**
-
-![image](https://user-images.githubusercontent.com/3589907/193196358-721af7e2-ca05-4f49-a5ce-3d949f813388.png)
-
-**v0.2**
-
-![image](https://user-images.githubusercontent.com/3589907/198265095-1b71fde2-553c-44e1-838c-c1249071297e.png)
-
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.

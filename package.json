@@ -9,7 +9,12 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@emotion/react": "^11.11.0",
+    "@emotion/styled": "^11.11.0",
+    "@mui/icons-material": "^5.11.16",
+    "@mui/material": "^5.12.3",
     "@prisma/client": "^4.13.0",
+    "@tanstack/react-query": "^4.29.5",
     "@tremor/react": "^2.4.0",
     "@types/node": "20.1.0",
     "@types/react": "18.2.5",
@@ -19,6 +24,7 @@
     "eslint": "8.40.0",
     "eslint-config-next": "13.4.1",
     "luxon": "^3.3.0",
+    "material-react-table": "^1.11.3",
     "mathjs": "^11.8.0",
     "next": "13.4.1",
     "postcss": "8.4.23",

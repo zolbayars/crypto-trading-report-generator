@@ -1,5 +1,4 @@
 import { DateTime } from "luxon";
-import { NextApiRequest, NextApiResponse } from "next";
 import {
   mergeTrades,
   binanceGet,
@@ -9,6 +8,7 @@ import {
   TradeDirection,
 } from "@/lib/api/exchanges/binance";
 import { PrismaClient, Prisma } from "@prisma/client";
+import { FrontEndTableQuery } from "@/lib/types";
 
 const prisma = new PrismaClient();
 
@@ -103,29 +103,37 @@ const saveMergedTrades = async (trades: Trade[]): Promise<void> => {
   }
 };
 
-const getTrades = async (startTime: DateTime, endTime: DateTime) => {
+// @to-do filter by the query
+export const getTrades = async (
+  query: FrontEndTableQuery,
+  skip = 0,
+  take = 1000
+) => {
   const latestTrade = await prisma.trade.findFirst({
     select: { exchangeCreatedAt: true },
     orderBy: { exchangeCreatedAt: "desc" },
   });
 
-  console.log("The latest trade was made at: ", latestTrade?.exchangeCreatedAt);
-
   const fromDate = !!latestTrade?.exchangeCreatedAt
     ? DateTime.fromJSDate(latestTrade?.exchangeCreatedAt)
-    : startTime;
+    : DateTime.now().minus({ week: 1 });
+
+  console.log("Gonna sync the trades made since ", fromDate);
 
   // Addition of 1s (1000 millis) is necessary here to prevent re-fetching the last trade
   await syncTrades(fromDate.toMillis() + 1000);
 
-  // @todo pagination
   const mergedTrades = await prisma.merged_trade.findMany({
     orderBy: {
       entryDate: "desc",
     },
+    skip,
+    take,
   });
 
-  return mergedTrades;
+  const count = await prisma.merged_trade.count({});
+
+  return { mergedTrades, count };
 };
 
 const syncTrades = async (
@@ -188,9 +196,3 @@ const syncTrades = async (
 
   console.log(`Sync is completed`);
 };
-
-// @todo
-const handler = async (
-  request: NextApiRequest,
-  response: NextApiResponse
-) => {};

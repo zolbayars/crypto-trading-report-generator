@@ -23,3 +23,8 @@ export interface APIReturnType {
   errorMsg: string;
   [key: string]: any;
 }
+
+export interface FrontEndTableQuery {
+  filters: { id: string; value: string | string[] | null[] }[];
+  sorting: { id: string; desc: boolean }[]; // But we will receive an array with only one element
+}

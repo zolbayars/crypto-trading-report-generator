@@ -16,6 +16,7 @@ import {
 } from "@tanstack/react-query";
 import { fetchMergedTrades, ApiResponse } from "@/lib/front-end/utils";
 import { merged_trade } from "@prisma/client";
+import { DateTime } from "luxon";
 
 const MainTable = () => {
   const [columnFilters, setColumnFilters] = useState<MRT_ColumnFiltersState>(
@@ -26,6 +27,13 @@ const MainTable = () => {
     pageIndex: 0,
     pageSize: 10,
   });
+
+  const formatTimestamp = (dateTime: string) => {
+    const date = DateTime.fromISO(dateTime);
+    //@todo get this from user preference
+    date.setZone("UTC+8");
+    return `${date.toFormat("yyyy-MM-dd HH:mm:ss")}`;
+  };
 
   const { data, isError, isFetching, isLoading, refetch } =
     useQuery<ApiResponse>({
@@ -46,10 +54,13 @@ const MainTable = () => {
   const columns = useMemo<MRT_ColumnDef<merged_trade>[]>(
     () => [
       {
+        accessorFn: (row) =>
+          formatTimestamp(row.entryDate as unknown as string),
         accessorKey: "entryDate",
         header: "Entry",
       },
       {
+        accessorFn: (row) => formatTimestamp(row.exitDate as unknown as string),
         accessorKey: "exitDate",
         header: "Exit",
       },
@@ -70,20 +81,23 @@ const MainTable = () => {
         header: "Exit Price",
       },
       {
+        accessorFn: (row) => row.size.toPrecision(5),
         accessorKey: "size",
         header: "Quantity",
       },
       {
-        accessorFn: (row) => `${row.fee} ${row.feeAsset}`,
+        accessorFn: (row) => `${row.fee.toPrecision(5)} ${row.feeAsset}`,
         header: "Fee",
         id: "fee",
       },
       {
+        accessorFn: (row) => row.pnl.toPrecision(5),
         accessorKey: "pnl",
         header: "PnL",
         filterVariant: "range",
       },
       {
+        accessorFn: (row) => `${row.pnlPercentage.toPrecision(2)}%`,
         accessorKey: "pnlPercentage",
         header: "PnL %",
         filterVariant: "range",

@@ -6,7 +6,7 @@ import { signWithSha256 } from "../../utils";
 
 export interface BinanceTrade {
   symbol: string;
-  id: number;
+  id: BigInt;
   orderId: number;
   side: string;
   price: string;
@@ -39,8 +39,8 @@ export interface Trade {
   feeAsset?: string;
   pnl: number;
   pnlPercentage?: number;
-  exitTradeIds: number[];
-  entryTradeIds: number[];
+  exitTradeIds: BigInt[];
+  entryTradeIds: BigInt[];
 }
 
 export const formatExchangeNumber = (numberInStrFormat: string) =>

@@ -26,81 +26,83 @@ const getIndividualTrades = async (
   return trades;
 };
 
-const saveTrades = async (trades: BinanceTrade[]): Promise<void> => {
-  const tradesToSave: Prisma.Enumerable<Prisma.tradeCreateManyInput> = [];
+const saveMergedTrades = async (
+  trades: Trade[],
+  rawTrades: BinanceTrade[]
+): Promise<void> => {
+  const rawTradesToSave: Prisma.Enumerable<Prisma.tradeCreateManyInput> = [];
 
-  for (const trade of trades) {
-    tradesToSave.push({
-      exchangeTradeId: trade.id,
-      exchangeOrderId: trade.orderId,
-      symbol: trade.symbol,
-      side: trade.side,
-      price: formatExchangeNumber(trade.price),
-      qty: formatExchangeNumber(trade.qty),
-      quoteQty: formatExchangeNumber(trade.quoteQty),
-      realizedPnl: formatExchangeNumber(trade.realizedPnl),
-      marginAsset: trade.marginAsset,
-      commission: formatExchangeNumber(trade.commission),
-      commissionAsset: trade.commissionAsset,
-      exchangeCreatedAt: new Date(trade.time),
-      positionSide: trade.positionSide,
-      isBuyer: trade.buyer ? 1 : 0,
-      isMaker: trade.maker ? 1 : 0,
+  for (const rawTrade of rawTrades) {
+    rawTradesToSave.push({
+      exchangeTradeId: rawTrade.id as bigint,
+      exchangeOrderId: rawTrade.orderId,
+      symbol: rawTrade.symbol,
+      side: rawTrade.side,
+      price: formatExchangeNumber(rawTrade.price),
+      qty: formatExchangeNumber(rawTrade.qty),
+      quoteQty: formatExchangeNumber(rawTrade.quoteQty),
+      realizedPnl: formatExchangeNumber(rawTrade.realizedPnl),
+      marginAsset: rawTrade.marginAsset,
+      commission: formatExchangeNumber(rawTrade.commission),
+      commissionAsset: rawTrade.commissionAsset,
+      exchangeCreatedAt: new Date(rawTrade.time),
+      positionSide: rawTrade.positionSide,
+      isBuyer: rawTrade.buyer ? 1 : 0,
+      isMaker: rawTrade.maker ? 1 : 0,
       marketType: "futures",
       exchange: "binance",
     });
   }
 
-  const result = await prisma.trade.createMany({
-    data: tradesToSave,
-    skipDuplicates: true,
-  });
-
-  console.log("saveTrades result", result);
-};
-
-const saveMergedTrades = async (trades: Trade[]): Promise<void> => {
-  const mergedTradesToSave: Prisma.Enumerable<Prisma.merged_tradeCreateManyInput> =
-    [];
+  let successfulSaves = 0;
+  let erroredSaves = 0;
 
   for (const trade of trades) {
-    // @todo save entry and exit trades here
-    // const entryTrades = await prisma.trade.findMany({
-    //   where: {
-    //     exchangeTradeId: {
-    //       in: trade.entryTradeIds,
-    //     },
-    //   },
-    // });
-    // const exitTrades = await prisma.trade.findMany({
-    //   where: {
-    //     exchangeTradeId: {
-    //       in: trade.exitTradeIds,
-    //     },
-    //   },
-    // });
-
-    mergedTradesToSave.push({
-      entryDate: new Date(trade.entryDate as number),
-      exitDate: new Date(trade.exitDate as number),
-      symbol: trade.symbol as string,
-      direction: trade.direction === TradeDirection.LONG ? "long" : "short",
-      entryPrice: trade.entryPrice as number,
-      exitPrice: trade.exitPrice as number,
-      size: trade.size as number,
-      pnl: trade.pnl,
-      pnlPercentage: trade.pnlPercentage as number,
-      fee: trade.fee,
-      feeAsset: trade.feeAsset as string,
+    const relatedRawTrades: Prisma.Enumerable<Prisma.tradeCreateManyInput> = [];
+    rawTradesToSave.forEach((rawTrade, index) => {
+      if (trade.entryTradeIds.includes(rawTrade.exchangeTradeId as bigint)) {
+        rawTradesToSave[index].isEntryTrade = 1;
+        relatedRawTrades.push(rawTradesToSave[index]);
+      } else if (
+        trade.exitTradeIds.includes(rawTrade.exchangeTradeId as bigint)
+      ) {
+        rawTradesToSave[index].isEntryTrade = 0;
+        relatedRawTrades.push(rawTradesToSave[index]);
+      }
     });
 
-    const result = await prisma.merged_trade.createMany({
-      data: mergedTradesToSave,
-      skipDuplicates: true,
-    });
+    // Can't use createMany because we need to create the related raw trades as well
+    // @see https://www.prisma.io/docs/concepts/components/prisma-client/relation-queries#create-multiple-records-and-multiple-related-records
+    try {
+      await prisma.merged_trade.create({
+        data: {
+          entryDate: new Date(trade.entryDate as number),
+          exitDate: new Date(trade.exitDate as number),
+          symbol: trade.symbol as string,
+          direction: trade.direction === TradeDirection.LONG ? "long" : "short",
+          entryPrice: trade.entryPrice as number,
+          exitPrice: trade.exitPrice as number,
+          size: trade.size as number,
+          pnl: trade.pnl,
+          pnlPercentage: trade.pnlPercentage as number,
+          fee: trade.fee,
+          feeAsset: trade.feeAsset as string,
+          trades: {
+            createMany: {
+              data: relatedRawTrades,
+            },
+          },
+        },
+      });
 
-    console.log("saveMergedTrades result", result);
+      successfulSaves++;
+    } catch (error) {
+      console.error(error);
+      erroredSaves++;
+    }
   }
+
+  console.log("saveMergedTrades result", { successfulSaves, erroredSaves });
 };
 
 // @to-do filter by the query
@@ -118,7 +120,7 @@ export const getTrades = async (
     ? DateTime.fromJSDate(latestTrade?.exchangeCreatedAt)
     : DateTime.now().minus({ week: 1 });
 
-  console.log("Gonna sync the trades made since ", fromDate);
+  console.log("Gonna sync the trades made since ", fromDate.toLocaleString());
 
   // Addition of 1s (1000 millis) is necessary here to prevent re-fetching the last trade
   await syncTrades(fromDate.toMillis() + 1000);
@@ -178,10 +180,7 @@ const syncTrades = async (
     return;
   }
 
-  console.log(`Saving ${allTrades.length} trades`);
-  console.log(allTrades);
-
-  await saveTrades(allTrades);
+  console.log(`${allTrades.length} raw trades found`);
 
   const draftMergedTrades = mergeTrades(allTrades);
   const onlyClosedTrades = draftMergedTrades.filter(
@@ -189,10 +188,10 @@ const syncTrades = async (
   );
 
   console.log(
-    `There are ${draftMergedTrades.length} merged trades. ${onlyClosedTrades.length} of them were closed`
+    `${draftMergedTrades.length} merged trades. ${onlyClosedTrades.length} of them were closed`
   );
 
-  await saveMergedTrades(onlyClosedTrades);
+  await saveMergedTrades(onlyClosedTrades, allTrades);
 
   console.log(`Sync is completed`);
 };

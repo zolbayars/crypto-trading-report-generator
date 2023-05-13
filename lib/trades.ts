@@ -138,7 +138,7 @@ export const getTrades = async (
   return { mergedTrades, count };
 };
 
-const syncTrades = async (
+export const syncTrades = async (
   sinceXMilliseconds: number,
   tillXMilliseconds?: number
 ): Promise<void> => {

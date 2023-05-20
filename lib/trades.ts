@@ -56,6 +56,7 @@ const saveMergedTrades = async (
 
   let successfulSaves = 0;
   let erroredSaves = 0;
+  let skippedDuplicates = 0;
 
   for (const trade of trades) {
     const relatedRawTrades: Prisma.Enumerable<Prisma.tradeCreateManyInput> = [];
@@ -96,13 +97,22 @@ const saveMergedTrades = async (
       });
 
       successfulSaves++;
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
+
+      if (error.code === "P2002") {
+        skippedDuplicates++;
+      }
+
       erroredSaves++;
     }
   }
 
-  console.log("saveMergedTrades result", { successfulSaves, erroredSaves });
+  console.log("saveMergedTrades result", {
+    successfulSaves,
+    skippedDuplicates,
+    erroredSaves,
+  });
 };
 
 // @to-do filter by the query
@@ -111,10 +121,21 @@ export const getTrades = async (
   skip = 0,
   take = 1000
 ) => {
-  const latestTrade = await prisma.trade.findFirst({
+  let latestTradeWithoutParent = await prisma.trade.findFirst({
     select: { exchangeCreatedAt: true },
+    where: { parentTradeId: null }, // we should get the latest trade without a parent
     orderBy: { exchangeCreatedAt: "desc" },
   });
+
+  let latestTrade = latestTradeWithoutParent;
+
+  // If a trade without parent wasn't found, we're gonna just get the latest trade
+  if (!latestTradeWithoutParent) {
+    latestTrade = await prisma.trade.findFirst({
+      select: { exchangeCreatedAt: true },
+      orderBy: { exchangeCreatedAt: "desc" },
+    });
+  }
 
   const fromDate = !!latestTrade?.exchangeCreatedAt
     ? DateTime.fromJSDate(latestTrade?.exchangeCreatedAt)
@@ -123,7 +144,14 @@ export const getTrades = async (
   console.log("Gonna sync the trades made since ", fromDate.toLocaleString());
 
   // Addition of 1s (1000 millis) is necessary here to prevent re-fetching the last trade
-  await syncTrades(fromDate.toMillis() + 1000);
+  const { rawTradesCount, mergedTradesCount } = await syncTrades(
+    fromDate.toMillis() + 1000
+  );
+
+  // There are raw trades, but we're not able merge them - means we've skipped some trades
+  if (rawTradesCount > 0 && mergedTradesCount === 0) {
+    await syncTrades(DateTime.now().minus({ day: 1 }).toMillis());
+  }
 
   const mergedTrades = await prisma.merged_trade.findMany({
     orderBy: {
@@ -141,7 +169,7 @@ export const getTrades = async (
 export const syncTrades = async (
   sinceXMilliseconds: number,
   tillXMilliseconds?: number
-): Promise<void> => {
+) => {
   const allTrades: BinanceTrade[] = [];
 
   const fromDate = DateTime.fromMillis(sinceXMilliseconds);
@@ -177,7 +205,10 @@ export const syncTrades = async (
 
   if (!allTrades.length) {
     console.log(`No new trades to sync`);
-    return;
+    return {
+      rawTradesCount: 0,
+      mergedTradesCount: 0,
+    };
   }
 
   console.log(`${allTrades.length} raw trades found`);
@@ -194,4 +225,9 @@ export const syncTrades = async (
   await saveMergedTrades(onlyClosedTrades, allTrades);
 
   console.log(`Sync is completed`);
+
+  return {
+    rawTradesCount: allTrades.length,
+    mergedTradesCount: draftMergedTrades.length,
+  };
 };

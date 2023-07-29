@@ -1,6 +1,6 @@
 import { DateTime } from "luxon";
 import { add, divide, bignumber, number } from "mathjs";
-import { PrismaClient, merged_trade } from "@prisma/client";
+import { PrismaClient, merged_trade, Prisma } from "@prisma/client";
 import { PnLMetrics } from "@/lib/types";
 
 const prisma = new PrismaClient();
@@ -66,4 +66,55 @@ export const getAnalytics = async (
   const pnlMetrics = getPnLMetrics(relevantTrades);
 
   return pnlMetrics;
+
 };
+
+export const getBestDaysPnLBeforeThisWeek = async () => {
+  // @todo create a helper method with the raw query to re-use
+  let pnls = await prisma.$queryRaw<{ dte: string, totalPnl: number }[]>(
+    Prisma.sql`SELECT DATE(exitDate) as dte, SUM(pnl) as totalPnl FROM merged_trade 
+      WHERE exitDate BETWEEN ${DateTime.now().startOf('week').minus({ week: 1 }).toSQL()}
+      AND ${DateTime.now().toSQL()} GROUP BY 1`
+  )
+
+  console.log('pnls', pnls);
+
+  if (!(pnls && pnls.length)) {
+    pnls = await prisma.$queryRaw<{ dte: string, totalPnl: number }[]>(
+      Prisma.sql`SELECT DATE(exitDate) as dte, SUM(pnl) as totalPnl FROM merged_trade 
+        WHERE exitDate BETWEEN ${DateTime.now().startOf('month').minus({ month: 1 }).toSQL()}
+        AND ${DateTime.now().toSQL()} GROUP BY 1`
+    )
+  }
+
+  if (!(pnls && pnls.length)) {
+    pnls = await prisma.$queryRaw<{ dte: string, totalPnl: number }[]>(
+      Prisma.sql`SELECT DATE(exitDate) as dte, SUM(pnl) as totalPnl FROM merged_trade 
+        WHERE exitDate BETWEEN ${DateTime.now().startOf('year').minus({ year: 1 }).toSQL()}
+        AND ${DateTime.now().toSQL()} GROUP BY 1`
+    )
+  }
+
+  if (!(pnls && pnls.length)) {
+    pnls = await prisma.$queryRaw<{ dte: string, totalPnl: number }[]>(
+      Prisma.sql`SELECT DATE(exitDate) as dte, SUM(pnl) as totalPnl FROM merged_trade GROUP BY 1`
+    )
+  }
+
+  if (!(pnls && pnls.length)) {
+    return 0;
+  }
+
+  let maxPnl = pnls[0].totalPnl
+
+  pnls.forEach((pnlObj) => {
+    if (pnlObj.totalPnl > maxPnl) {
+      maxPnl = pnlObj.totalPnl;
+    }
+  })
+
+  console.log('maxPnl', maxPnl);
+
+  return maxPnl;
+
+}

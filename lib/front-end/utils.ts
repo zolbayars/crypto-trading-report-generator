@@ -37,3 +37,16 @@ export const fetchMergedTrades = async (
   const json = (await response.json()) as ApiResponse;
   return json;
 };
+
+export const fetchLossLimit = async () => {
+  const fetchURL = new URL(
+    `/api/analytics/loss-limit`,
+    process.env.NODE_ENV === "production"
+      ? "https://www.cryptobaldan.com"
+      : "http://localhost:3000"
+  );
+
+  const response = await fetch(fetchURL.href);
+  const json = (await response.json());
+  return json;
+};

@@ -34,8 +34,8 @@ const saveMergedTrades = async (
 
   for (const rawTrade of rawTrades) {
     rawTradesToSave.push({
-      exchangeTradeId: rawTrade.id as bigint,
-      exchangeOrderId: rawTrade.orderId,
+      exchangeTradeId: `${rawTrade.id}`,
+      exchangeOrderId: `${rawTrade.orderId}`,
       symbol: rawTrade.symbol,
       side: rawTrade.side,
       price: formatExchangeNumber(rawTrade.price),
@@ -61,12 +61,10 @@ const saveMergedTrades = async (
   for (const trade of trades) {
     const relatedRawTrades: Prisma.Enumerable<Prisma.tradeCreateManyInput> = [];
     rawTradesToSave.forEach((rawTrade, index) => {
-      if (trade.entryTradeIds.includes(rawTrade.exchangeTradeId as bigint)) {
+      if (trade.entryTradeIds.includes(rawTrade.exchangeTradeId)) {
         rawTradesToSave[index].isEntryTrade = 1;
         relatedRawTrades.push(rawTradesToSave[index]);
-      } else if (
-        trade.exitTradeIds.includes(rawTrade.exchangeTradeId as bigint)
-      ) {
+      } else if (trade.exitTradeIds.includes(rawTrade.exchangeTradeId)) {
         rawTradesToSave[index].isEntryTrade = 0;
         relatedRawTrades.push(rawTradesToSave[index]);
       }
@@ -180,7 +178,9 @@ export const syncTrades = async (
     ? DateTime.fromMillis(tillXMilliseconds)
     : DateTime.now();
 
-  console.log(`Syncing the trades from ${fromDate} till ${tillDate}`);
+  console.log(
+    `Syncing the trades from ${fromDate.toLocaleString()} till ${tillDate.toLocaleString()}`
+  );
 
   const dateDiff = tillDate.diff(startDate, ["weeks"]);
 

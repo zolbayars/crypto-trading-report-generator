@@ -17,3 +17,16 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 ## Deploy on Vercel
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+
+## Applying changes to DB
+
+Update the prisma/schema.prisma file and run:
+
+```
+npx prisma db push
+npx prisma generate
+```
+
+We're not running `npx prisma migrate dev` because of some [limitations in PlanetScale](https://www.prisma.io/docs/guides/database/using-prisma-with-planetscale):
+
+> Prisma recommends not using prisma migrate when making schema changes with PlanetScale. Instead, we recommend that you use the prisma db push command.

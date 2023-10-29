@@ -29,14 +29,14 @@ model merged_trade {
   createdAt     DateTime               @default(now()) @db.DateTime(6)
   updatedAt     DateTime               @default(now()) @db.DateTime(6)
 
-  @@unique([entryDate, exitDate])
+  @@unique([symbol, entryDate, exitDate])
   @@index([entryDate])
 }
 
 model trade {
   id                Int              @id @default(autoincrement())
-  exchangeTradeId   BigInt
-  exchangeOrderId   BigInt
+  exchangeTradeId   String
+  exchangeOrderId   String
   symbol            String           @db.VarChar(255)
   side              String           @db.VarChar(255)
   price             Float

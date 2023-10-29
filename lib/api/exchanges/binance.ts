@@ -6,7 +6,7 @@ import { signWithSha256 } from "../../utils";
 
 export interface BinanceTrade {
   symbol: string;
-  id: BigInt;
+  id: number;
   orderId: number;
   side: string;
   price: string;
@@ -39,8 +39,8 @@ export interface Trade {
   feeAsset?: string;
   pnl: number;
   pnlPercentage?: number;
-  exitTradeIds: BigInt[];
-  entryTradeIds: BigInt[];
+  exitTradeIds: string[];
+  entryTradeIds: string[];
 }
 
 export const formatExchangeNumber = (numberInStrFormat: string) =>
@@ -142,9 +142,9 @@ const mergeRelatedTrades = (
     }
 
     if (trade.side === exitType) {
-      mergedTrade.exitTradeIds.push(trade.id);
+      mergedTrade.exitTradeIds.push(`${trade.id}`);
     } else {
-      mergedTrade.entryTradeIds.push(trade.id);
+      mergedTrade.entryTradeIds.push(`${trade.id}`);
     }
   }
 

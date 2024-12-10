@@ -57,7 +57,7 @@ export const getAnalytics = async (
 
   const relevantTrades = await prisma.merged_trade.findMany({
     where: {
-      exitDate: { gt: from.toJSDate(), lte: to.toJSDate() },
+      exit_date: { gt: from.toJSDate(), lte: to.toJSDate() },
     },
   });
 
@@ -72,8 +72,8 @@ export const getAnalytics = async (
 export const getBestDaysPnLBeforeThisWeek = async () => {
   // @todo create a helper method with the raw query to re-use
   let pnls = await prisma.$queryRaw<{ dte: string, totalPnl: number }[]>(
-    Prisma.sql`SELECT DATE(exitDate) as dte, SUM(pnl) as totalPnl FROM merged_trade 
-      WHERE exitDate BETWEEN ${DateTime.now().startOf('week').minus({ week: 1 }).toSQL()}
+    Prisma.sql`SELECT DATE(exit_date) as dte, SUM(pnl) as totalPnl FROM merged_trade 
+      WHERE exit_date BETWEEN ${DateTime.now().startOf('week').minus({ week: 1 }).toSQL()}
       AND ${DateTime.now().toSQL()} GROUP BY 1`
   )
 
@@ -81,23 +81,23 @@ export const getBestDaysPnLBeforeThisWeek = async () => {
 
   if (!(pnls && pnls.length)) {
     pnls = await prisma.$queryRaw<{ dte: string, totalPnl: number }[]>(
-      Prisma.sql`SELECT DATE(exitDate) as dte, SUM(pnl) as totalPnl FROM merged_trade 
-        WHERE exitDate BETWEEN ${DateTime.now().startOf('month').minus({ month: 1 }).toSQL()}
+      Prisma.sql`SELECT DATE(exit_date) as dte, SUM(pnl) as totalPnl FROM merged_trade 
+        WHERE exit_date BETWEEN ${DateTime.now().startOf('month').minus({ month: 1 }).toSQL()}
         AND ${DateTime.now().toSQL()} GROUP BY 1`
     )
   }
 
   if (!(pnls && pnls.length)) {
     pnls = await prisma.$queryRaw<{ dte: string, totalPnl: number }[]>(
-      Prisma.sql`SELECT DATE(exitDate) as dte, SUM(pnl) as totalPnl FROM merged_trade 
-        WHERE exitDate BETWEEN ${DateTime.now().startOf('year').minus({ year: 1 }).toSQL()}
+      Prisma.sql`SELECT DATE(exit_date) as dte, SUM(pnl) as totalPnl FROM merged_trade 
+        WHERE exit_date BETWEEN ${DateTime.now().startOf('year').minus({ year: 1 }).toSQL()}
         AND ${DateTime.now().toSQL()} GROUP BY 1`
     )
   }
 
   if (!(pnls && pnls.length)) {
     pnls = await prisma.$queryRaw<{ dte: string, totalPnl: number }[]>(
-      Prisma.sql`SELECT DATE(exitDate) as dte, SUM(pnl) as totalPnl FROM merged_trade GROUP BY 1`
+      Prisma.sql`SELECT DATE(exit_date) as dte, SUM(pnl) as totalPnl FROM merged_trade GROUP BY 1`
     )
   }
 

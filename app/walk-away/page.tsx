@@ -55,13 +55,13 @@ const AnalysisTable = () => {
     () => [
       {
         accessorFn: (row) =>
-          formatTimestamp(row.entryDate as unknown as string),
-        accessorKey: "entryDate",
+          formatTimestamp(row.entry_date as unknown as string),
+        accessorKey: "entry_date",
         header: "Entry",
       },
       {
-        accessorFn: (row) => formatTimestamp(row.exitDate as unknown as string),
-        accessorKey: "exitDate",
+        accessorFn: (row) => formatTimestamp(row.exit_date as unknown as string),
+        accessorKey: "exit_date",
         header: "Exit",
       },
       {
@@ -78,11 +78,11 @@ const AnalysisTable = () => {
         header: "Quantity",
       },
       {
-        accessorKey: "entryPrice",
+        accessorKey: "entry_price",
         header: "Entry Price",
       },
       {
-        accessorKey: "exitPrice",
+        accessorKey: "exit_price",
         header: "Exit Price",
       },
       {

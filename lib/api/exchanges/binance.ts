@@ -28,17 +28,17 @@ export enum TradeDirection {
 }
 
 export interface Trade {
-  entryDate?: number;
-  exitDate?: number;
+  entry_date?: number;
+  exit_date?: number;
   symbol?: string;
   direction?: TradeDirection;
-  entryPrice?: number;
-  exitPrice?: number;
+  entry_price?: number;
+  exit_price?: number;
   size?: number;
   fee: number;
-  feeAsset?: string;
+  fee_asset?: string;
   pnl: number;
-  pnlPercentage?: number;
+  pnl_percentage?: number;
   exitTradeIds: string[];
   entryTradeIds: string[];
 }
@@ -133,12 +133,12 @@ const mergeRelatedTrades = (
     );
 
     if (i === 0) {
-      mergedTrade.entryDate = trade.time;
-      mergedTrade.entryPrice = price;
+      mergedTrade.entry_date = trade.time;
+      mergedTrade.entry_price = price;
     } else if (i === relatedTrades.length - 1) {
-      mergedTrade.exitDate = trade.time;
-      mergedTrade.exitPrice = price;
-      mergedTrade.feeAsset = trade.commissionAsset;
+      mergedTrade.exit_date = trade.time;
+      mergedTrade.exit_price = price;
+      mergedTrade.fee_asset = trade.commissionAsset;
     }
 
     if (trade.side === exitType) {
@@ -162,8 +162,8 @@ const mergeRelatedTrades = (
   mergedTrade.size = tradeSize;
 
   // @todo Deduct the fee
-  mergedTrade.pnlPercentage =
-    mergedTrade.pnl / (tradeSize * (mergedTrade.entryPrice as number));
+  mergedTrade.pnl_percentage =
+    mergedTrade.pnl / (tradeSize * (mergedTrade.entry_price as number));
 
   return mergedTrade;
 };

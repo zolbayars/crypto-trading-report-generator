@@ -78,13 +78,13 @@ const MainTable = () => {
     () => [
       {
         accessorFn: (row) =>
-          formatTimestamp(row.entryDate as unknown as string),
-        accessorKey: "entryDate",
+          formatTimestamp(row.entry_date as unknown as string),
+        accessorKey: "entry_date",
         header: "Entry",
       },
       {
-        accessorFn: (row) => formatTimestamp(row.exitDate as unknown as string),
-        accessorKey: "exitDate",
+        accessorFn: (row) => formatTimestamp(row.exit_date as unknown as string),
+        accessorKey: "exit_date",
         header: "Exit",
       },
       {
@@ -96,11 +96,11 @@ const MainTable = () => {
         header: "Direction",
       },
       {
-        accessorKey: "entryPrice",
+        accessorKey: "entry_price",
         header: "Entry Price",
       },
       {
-        accessorKey: "exitPrice",
+        accessorKey: "exit_price",
         header: "Exit Price",
       },
       {
@@ -109,7 +109,7 @@ const MainTable = () => {
         header: "Quantity",
       },
       {
-        accessorFn: (row) => `${row.fee.toPrecision(5)} ${row.feeAsset}`,
+        accessorFn: (row) => `${row.fee.toPrecision(5)} ${row.fee_asset}`,
         header: "Fee",
         id: "fee",
       },
@@ -120,8 +120,8 @@ const MainTable = () => {
         filterVariant: "range",
       },
       {
-        accessorFn: (row) => `${row.pnlPercentage.toPrecision(2)}%`,
-        accessorKey: "pnlPercentage",
+        accessorFn: (row) => `${row.pnl_percentage.toPrecision(2)}%`,
+        accessorKey: "pnl_percentage",
         header: "PnL %",
         filterVariant: "range",
       },

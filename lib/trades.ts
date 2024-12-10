@@ -34,22 +34,22 @@ const saveMergedTrades = async (
 
   for (const rawTrade of rawTrades) {
     rawTradesToSave.push({
-      exchangeTradeId: `${rawTrade.id}`,
-      exchangeOrderId: `${rawTrade.orderId}`,
+      exchange_trade_id: `${rawTrade.id}`,
+      exchange_order_id: `${rawTrade.orderId}`,
       symbol: rawTrade.symbol,
       side: rawTrade.side,
       price: formatExchangeNumber(rawTrade.price),
       qty: formatExchangeNumber(rawTrade.qty),
-      quoteQty: formatExchangeNumber(rawTrade.quoteQty),
-      realizedPnl: formatExchangeNumber(rawTrade.realizedPnl),
-      marginAsset: rawTrade.marginAsset,
+      quote_qty: formatExchangeNumber(rawTrade.quoteQty),
+      realized_pnl: formatExchangeNumber(rawTrade.realizedPnl),
+      margin_asset: rawTrade.marginAsset,
       commission: formatExchangeNumber(rawTrade.commission),
-      commissionAsset: rawTrade.commissionAsset,
-      exchangeCreatedAt: new Date(rawTrade.time),
-      positionSide: rawTrade.positionSide,
-      isBuyer: rawTrade.buyer ? 1 : 0,
-      isMaker: rawTrade.maker ? 1 : 0,
-      marketType: "futures",
+      commission_asset: rawTrade.commissionAsset,
+      exchange_created_at: new Date(rawTrade.time),
+      position_side: rawTrade.positionSide,
+      is_buyer: rawTrade.buyer ? 1 : 0,
+      is_maker: rawTrade.maker ? 1 : 0,
+      market_type: "futures",
       exchange: "binance",
     });
   }
@@ -61,11 +61,11 @@ const saveMergedTrades = async (
   for (const trade of trades) {
     const relatedRawTrades: Prisma.Enumerable<Prisma.tradeCreateManyInput> = [];
     rawTradesToSave.forEach((rawTrade, index) => {
-      if (trade.entryTradeIds.includes(rawTrade.exchangeTradeId)) {
-        rawTradesToSave[index].isEntryTrade = 1;
+      if (trade.entryTradeIds.includes(rawTrade.exchange_trade_id)) {
+        rawTradesToSave[index].is_entry_trade = 1;
         relatedRawTrades.push(rawTradesToSave[index]);
-      } else if (trade.exitTradeIds.includes(rawTrade.exchangeTradeId)) {
-        rawTradesToSave[index].isEntryTrade = 0;
+      } else if (trade.exitTradeIds.includes(rawTrade.exchange_trade_id)) {
+        rawTradesToSave[index].is_entry_trade = 0;
         relatedRawTrades.push(rawTradesToSave[index]);
       }
     });
@@ -75,17 +75,17 @@ const saveMergedTrades = async (
     try {
       await prisma.merged_trade.create({
         data: {
-          entryDate: new Date(trade.entryDate as number),
-          exitDate: new Date(trade.exitDate as number),
+          entry_date: new Date(trade.entry_date as number),
+          exit_date: new Date(trade.exit_date as number),
           symbol: trade.symbol as string,
           direction: trade.direction === TradeDirection.LONG ? "long" : "short",
-          entryPrice: trade.entryPrice as number,
-          exitPrice: trade.exitPrice as number,
+          entry_price: trade.entry_price as number,
+          exit_price: trade.exit_price as number,
           size: trade.size as number,
           pnl: trade.pnl,
-          pnlPercentage: trade.pnlPercentage as number,
+          pnl_percentage: trade.pnl_percentage as number,
           fee: trade.fee,
-          feeAsset: trade.feeAsset as string,
+          fee_asset: trade.fee_asset as string,
           trades: {
             createMany: {
               data: relatedRawTrades,
@@ -120,9 +120,9 @@ export const getTrades = async (
   take = 1000
 ) => {
   let latestTradeWithoutParent = await prisma.trade.findFirst({
-    select: { exchangeCreatedAt: true },
-    where: { parentTradeId: null }, // we should get the latest trade without a parent
-    orderBy: { exchangeCreatedAt: "desc" },
+    select: { exchange_created_at: true },
+    where: { parent_trade_id: null }, // we should get the latest trade without a parent
+    orderBy: { exchange_created_at: "desc" },
   });
 
   let latestTrade = latestTradeWithoutParent;
@@ -130,13 +130,13 @@ export const getTrades = async (
   // If a trade without parent wasn't found, we're gonna just get the latest trade
   if (!latestTradeWithoutParent) {
     latestTrade = await prisma.trade.findFirst({
-      select: { exchangeCreatedAt: true },
-      orderBy: { exchangeCreatedAt: "desc" },
+      select: { exchange_created_at: true },
+      orderBy: { exchange_created_at: "desc" },
     });
   }
 
-  const fromDate = !!latestTrade?.exchangeCreatedAt
-    ? DateTime.fromJSDate(latestTrade?.exchangeCreatedAt)
+  const fromDate = !!latestTrade?.exchange_created_at
+    ? DateTime.fromJSDate(latestTrade?.exchange_created_at)
     : DateTime.now().minus({ week: 1 });
 
   console.log("Gonna sync the trades made since ", fromDate.toLocaleString());
@@ -153,7 +153,7 @@ export const getTrades = async (
 
   const mergedTrades = await prisma.merged_trade.findMany({
     orderBy: {
-      entryDate: "desc",
+      entry_date: "desc",
     },
     skip,
     take,

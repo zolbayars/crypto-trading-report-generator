@@ -6,62 +6,61 @@ datasource db {
   provider     = "postgresql"
   url          = env("DATABASE_URL")
   directUrl    = env("DIRECT_URL")
-  relationMode = "prisma"
 }
 
 model merged_trade {
   id            Int                    @id @default(autoincrement())
-  entryDate     DateTime               @db.Timestamp(0)
-  exitDate      DateTime               @db.Timestamp(0)
+  entry_date     DateTime               @db.Timestamp(0) @map("entry_date")
+  exit_date      DateTime               @db.Timestamp(0)
   symbol        String                 @db.VarChar(255)
   direction     merged_trade_direction
-  entryPrice    Float
-  exitPrice     Float
+  entry_price    Float
+  exit_price     Float
   size          Float
   pnl           Float
-  pnlPercentage Float
+  pnl_percentage Float
   fee           Float
-  feeAsset      String                 @db.VarChar(255)
-  entryReason   String?                @db.VarChar(255)
-  exitReason    String?                @db.VarChar(255)
+  fee_asset      String                 @db.VarChar(255)
+  entry_reason   String?                @db.VarChar(255)
+  exit_reason    String?                @db.VarChar(255)
   mistake       String?                @db.VarChar(255)
   comment       String?                @db.VarChar(255)
   trades        trade[]
-  createdAt     DateTime               @default(now()) @db.Timestamp(6)
-  updatedAt     DateTime               @default(now()) @db.Timestamp(6)
+  created_at     DateTime               @default(now()) @db.Timestamp(6)
+  updated_at     DateTime               @default(now()) @db.Timestamp(6)
 
-  @@unique([symbol, entryDate, exitDate])
-  @@index([entryDate])
+  @@unique([symbol, entry_date, exit_date])
+  @@index([entry_date])
 }
 
 model trade {
   id                Int              @id @default(autoincrement())
-  exchangeTradeId   String
-  exchangeOrderId   String
+  exchange_trade_id   String
+  exchange_order_id   String
   symbol            String           @db.VarChar(255)
   side              String           @db.VarChar(255)
   price             Float
   qty               Float
-  quoteQty          Float
-  realizedPnl       Float
-  marginAsset       String           @db.VarChar(255)
+  quote_qty          Float
+  realized_pnl       Float
+  margin_asset       String           @db.VarChar(255)
   commission        Float
-  commissionAsset   String           @db.VarChar(255)
-  exchangeCreatedAt DateTime         @db.Timestamp(0)
-  positionSide      String           @db.VarChar(255)
-  isBuyer           Int              @db.SmallInt
-  isMaker           Int              @db.SmallInt
-  isEntryTrade      Int?             @db.SmallInt
-  marketType        trade_marketType
+  commission_asset   String           @db.VarChar(255)
+  exchange_created_at DateTime         @db.Timestamp(0)
+  position_side      String           @db.VarChar(255)
+  is_buyer           Int              @db.SmallInt
+  is_maker           Int              @db.SmallInt
+  is_entry_trade      Int?             @db.SmallInt
+  market_type        trade_marketType
   exchange          trade_exchange
-  createdAt         DateTime         @default(now()) @db.Timestamp(6)
-  updatedAt         DateTime         @default(now()) @db.Timestamp(6)
-  parentTrade       merged_trade?    @relation(fields: [parentTradeId], references: [id])
-  parentTradeId     Int?
+  created_at         DateTime         @default(now()) @db.Timestamp(6)
+  updated_at         DateTime         @default(now()) @db.Timestamp(6)
+  parent_trade       merged_trade?    @relation(fields: [parent_trade_id], references: [id])
+  parent_trade_id     Int?
 
-  @@unique([exchange, exchangeTradeId])
-  @@index([parentTradeId])
-  @@index([exchangeTradeId])
+  @@unique([exchange, exchange_trade_id])
+  @@index([parent_trade_id])
+  @@index([exchange_trade_id])
 }
 
 model user {
